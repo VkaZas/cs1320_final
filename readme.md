@@ -7,6 +7,6 @@
 - routes(backend) - backend routers
 
 # Run
-1. `npm -i`
+1. `npm i` & `npm i gulp -g`
 2. `gulp`
 3. Visit `localhost:8080/`
