@@ -20,11 +20,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 var anyDB = require('any-db');
 var conn = anyDB.createConnection('sqlite3://events.db');
 
-var events = "CREATE TABLE events (\
-				id TEXT, \
-				time INTEGER, \
-				location TEXT, \
-				emails TEXT
+var events = "CREATE TABLE events ( \
+  id INTEGER PRIMARY KEY, \
+  time INTEGER, \
+  location TEXT, \
+  emails TEXT \
 )";
 //should make emails a separate table? 
 

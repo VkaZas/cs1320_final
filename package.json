@@ -4,13 +4,15 @@
   "description": "hw5 chatroom",
   "main": "server.js",
   "dependencies": {
+    "any-db": "^2.2.1",
+    "any-db-sqlite3": "^2.1.4",
     "body-parser": "^1.18.2",
     "colors": "^1.2.1",
     "express": "^4.16.3",
-    "pug": "^2.0.1"
+    "pug": "^2.0.3"
   },
   "devDependencies": {
-    "@babel/core": "^7.0.0-beta.41",
+    "@babel/core": "^7.0.0-beta.44",
     "@babel/preset-env": "^7.0.0-beta.42",
     "gulp": "^3.9.1",
     "gulp-babel": "^8.0.0-beta.2",
