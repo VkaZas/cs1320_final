@@ -4,6 +4,7 @@
   "description": "hw5 chatroom",
   "main": "server.js",
   "dependencies": {
+    "@typeform/embed": "^0.5.8",
     "any-db": "^2.2.1",
     "any-db-sqlite3": "^2.1.4",
     "body-parser": "^1.18.2",
