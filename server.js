@@ -169,7 +169,7 @@ app.post("/attend/:id/updatetimeslot", function(request, resposne) {
   }
   var new_location_votes = "";
   if (location_votes) {
-    new_location_votes = old_location_votes + "," +
+    new_location_votes = old_location_votes + "," + location_votes;
   }
   //update events with new vars created right above 
   var updateEvents = "UPDATE events \
