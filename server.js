@@ -27,22 +27,27 @@ var connTimeSlots = anyDB.createConnection('sqlite3://time_slots.db');
 var events = "CREATE TABLE events ( \
   id TEXT PRIMARY KEY, \
   name TEXT, \
-  creator_email, TEXT\
-  start_date, DATE \
-  end_date, DATE \
-  start_time_list, TEXT \
-  end_time_list, TEXT \
-  attendents, TEXT \
+  creator_email TEXT,\
+  start_date DATE, \
+  end_date DATE, \
+  start_time_list TEXT, \
+  end_time_list TEXT, \
+  attendee_names TEXT, \
+  attendee_emails TEXT, \
   locations TEXT, \
-  location_votes TEXT \
+  location_votes TEXT, \
+  decided_date DATE,\
+  decided_start_time TIME, \
+  decided_end_time TIME, \
+  decided_location TEXT \
 )";
 connEvents.query(events, function(err, data) {});
 
 var timeSlots = "CREATE TABLE time_slots (\
-  event_id TEXT, FOREIGN KEY REFERENCES events(id) \
-  name, TEXT \
-  date, DATE \
-  slotScore, TEXT \
+  event_id TEXT FOREIGN KEY REFERENCES events(id), \
+  attendee_name TEXT, \
+  date DATE, \
+  slot_score_list TEXT \
 )";
 connTimeSlots.query(timeSlots, function(err, data) {});
 
@@ -55,13 +60,14 @@ var transporter = nodemailer.createTransport({
   }
 });
 
-// Routes
-app.use('/', index);
+// ROUTES 
 
+//get the create page up for the creator to start making the event
 app.get('/event/create', function(request, response) {
-	response.render('create');
+	response.render('index');
 });
 
+//pass all the information to the server and perform the needed backend functions
 app.post('/event/createEvent', function(request, response) {
   var id = uuidv4()
   var event_name = request.params.event_name;
@@ -95,27 +101,99 @@ app.post('/event/createEvent', function(request, response) {
       transporter.sendMail(mailoptions, function(err, data) {
         if (err) {
           console.log(err);
-          io.sockets.in(id).emit('url', attend_url, decision_url);
+          response.json({decision: decision_url, attned: attend_url});
         } else {
-          io.sockets.in(id).emit('url', attend_url);
+          response.json({attend: attend_url});
         }
       });
     }
   });
 });
 
+//serve the page where attendees fill out their availability
 app.get('/attend/:id', function(request, response) {
   var id = request.params.id;
-	response.render('create');
+	response.render('index');
 });
 
+//get the information for a particular event and send it to the client 
 app.post('/attend/:id', function(request, resposne) {
-  
+  var id = request.params.id;
+  var eventQuery = "SELECT name, locations, location_votes, attendents FROM events WHERE id = ?";
+  conn.query(eventQuery, id, function(err, data) {
+    if (err) {
+      console.log(err);
+      //do we want to do anything more than this?
+    } else {
+      response.json({eventData: data}); 
+    }
+  })
 });
 
+//update the server with the attendee's preferences 
 app.post("/attend/:id/updatetimeslot", function(request, resposne) {
-  //will also need to flesh this out some more
-})
+  //get variables from request (might get errors if not in params)
+  var id = request.params.id;
+  var attendee_name = request.params.attendee_name;
+  //i do the check with the empty string because emails and locations are optional
+  var attendee_email = "";
+  if (request.params.attendee_email) {
+    attendee_email = request.params.attendee_email;
+  }
+  var slotinfo = request.params.slotinfo;
+  var location_votes = "";
+  if (request.params.location_votes) {
+    location_votes = request.params.location_votes;
+  }
+  //get all the names, emails, and location votes for the event
+  var eventInfoeQuery = "SELECT attendee_names, attendee_emails, location_votes FROM events WHERE id = ?"; 
+  var old_names = "";
+  var old_emails = "";
+  var old_location_votes = "";
+  conn.query(eventInfoQuery, id, function(err, data){
+    if (err) {
+      console.log(err);
+    } else {
+      //assign variables with results from query
+      var row = data.data.rows;
+      old_names = row.attendee_names;
+      old_emails = row.attndee_emails;
+      old_location_votes = row.location_votes;
+    }
+  });
+  //create the new entries using the data just retrieved from the DB and the data from request.params
+  var new_names = old_names + "," + attendee_name;
+  var new_emails = "";
+  if (attendee_email) {
+    new_emails = old_emails + "," + attendee_email;
+  }
+  var new_location_votes = "";
+  if (location_votes) {
+    new_location_votes = old_location_votes + "," + location_votes;
+  }
+  //update events with new vars created right above 
+  var updateEvents = "UPDATE events \
+                      SET attendee_names = ?, attendee_emails = ?, location_votes = ? \
+                      WHERE id = ?";
+  conn.query(updateEvents, new_names, new_emails, new_location_votes, id, function(err, data) {
+    if (err) {
+      console.log(err);
+    }
+  });
+  //update time_slots table with time slots from request
+  var slotsToInsert = [];
+  for (slot in slotinfo) {
+    var currSlot = slotinfo[slot];
+    var currInfo = [id, attendee_name, currSlot["Date"], currSlot["slotScoreList"]];
+    slotsToInsert.push(currInfo);
+  }
+  var addToTimeSlots = "INSERT INTO time_slots (event_id, attendee_name, date, slot_score_list) VALUES ?";
+  conn.query(addToTimeSlots, slotsToInsert, function(err, data) {
+    if (err) {
+      console.log(err);
+    }
+  });
+});
 
 // 404
 app.use((req, res) => {
