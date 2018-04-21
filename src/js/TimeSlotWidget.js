@@ -34,7 +34,7 @@ class TimeSlotWidget {
     }
 
     renderPicker(slotList) {
-        this.slotData = slotList;
+        this.slotData = _.cloneDeep(slotList);
         this.$pickerContainer.empty();
         const $pickerTable = $('<table id="picker-table"></table>');
         this.$pickerContainer.append($pickerTable);
@@ -132,16 +132,15 @@ class TimeSlotWidget {
     getPickerData() {
         const res = [];
         for (let slot of this.slotData) {
-            const colGrid = this.$pickerContainer.find(`td[data-date=${slot.date}]`);
+            const colGrid = this.$pickerContainer.find(`td[data-date="${slot.date}"]`);
             const arr = [];
+            for (let i = 0; i < 48; i++) arr.push(0);
             for (let i = 16; i < 41; i++) {
-                const $ele = colGrid[i-16];
+                const $ele = $(colGrid[i-16]);
                 if ($ele.hasClass('selected')) {
-                    if ($ele.hasClass('priority-1')) arr.push(3);
-                    else if ($ele.hasClass('priority-2')) arr.push(2);
-                    else if ($ele.hasClass('priority-3')) arr.push(1);
-                } else {
-                    arr.push(-1);
+                    if ($ele.hasClass('priority-1')) arr[i] = (3);
+                    else if ($ele.hasClass('priority-2')) arr[i] = (2);
+                    else if ($ele.hasClass('priority-3')) arr[i] = (1);
                 }
             }
             res.push({
@@ -162,11 +161,12 @@ class TimeSlotWidget {
         for (let slot of data) {
             $firstRow.append($(`<td>${slot.date}</td>`));
         }
+        $firstRow.find('td').addClass('unselectable');
         $presenterTable.append($firstRow);
 
         for (let i = 16; i < 41; i++) {
             const $row = $('<tr></tr>');
-            $row.append(`<td>${(i % 2 === 0 ? parseInt(i / 2) : '')}</td>`);
+            $row.append(`<td class="unselectable">${(i % 2 === 0 ? parseInt(i / 2) : '')}</td>`);
             for (let item of data) {
                 const clr = parseInt(item.scoreList[i]*255);
                 const $td = $(`<td style="background-color: rgb(${clr},${clr},${clr})"></td>`);

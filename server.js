@@ -44,12 +44,11 @@ var events = "CREATE TABLE events ( \
 connEvents.query(events, function(err, data) {});
 
 var timeSlots = "CREATE TABLE time_slots (\
-  event_id TEXT FOREIGN KEY REFERENCES events(id), \
-  attendee_name TEXT, \
+  event_id TEXT, \
   date DATE, \
   slot_score_list TEXT \
 )";
-connTimeSlots.query(timeSlots, function(err, data) {});
+connEvents.query(timeSlots, function(err, data) {});
 
 //Email setup
 var transporter = nodemailer.createTransport({
@@ -67,16 +66,20 @@ app.get('/event/create', function(request, response) {
 	response.render('index');
 });
 
+
 //pass all the information to the server and perform the needed backend functions
 app.post('/event/createEvent', function(request, response) {
-  var id = uuidv4()
-  var event_name = request.params.event_name;
-  var creator_email = request.params.creator_email;
-  var start_date = request.params.start_date;
-  var end_date = request.params.end_date;
-  var locations = request.params.locations;
-  var createNewEvent = "INSERT INTO events (id, event_name, creator_email, start_date, end_date, locations) VALUES($1,$2,$3,$4,$5)";
-  conn.query(createNewEvent,[id,name,creator_email,start_date,end_date,locations],function(err,data) {
+  var id = uuidv4();
+  var event_name = request.body.event_name;
+  var creator_email = request.body.creator_email;
+  var start_date = request.body.start_date;
+  var start_time_list = request.body.start_time_list;
+  var end_date = request.body.end_date;
+  var end_time_list = request.body.end_time_list;
+  var locations = request.body.locations;
+
+  var createNewEvent = "INSERT INTO events (id, name, creator_email, start_date, start_time_list, end_date, end_time_list, locations) VALUES($1,$2,$3,$4,$5,$6,$7,$8)";
+  connEvents.query(createNewEvent,[id,event_name,creator_email,start_date,start_time_list,end_date,end_time_list,locations],function(err,data) {
     if (err) {
       console.log(err);
       //maybe alert the user and redirect somewhere?
@@ -113,86 +116,88 @@ app.post('/event/createEvent', function(request, response) {
 //serve the page where attendees fill out their availability
 app.get('/attend/:id', function(request, response) {
   var id = request.params.id;
-	response.render('index');
+  console.log(id.red);
+	response.render('attend', {id: id});
 });
 
 //get the information for a particular event and send it to the client 
-app.post('/attend/:id', function(request, resposne) {
+app.post('/attend/:id', function(request, response) {
   var id = request.params.id;
-  var eventQuery = "SELECT name, locations, location_votes, attendents FROM events WHERE id = ?";
-  conn.query(eventQuery, id, function(err, data) {
+  var eventQuery = "SELECT name, locations, location_votes, start_date, end_date, start_time_list, end_time_list FROM events WHERE id = ?";
+  connEvents.query(eventQuery, id, function(err, data1) {
     if (err) {
       console.log(err);
       //do we want to do anything more than this?
     } else {
-      response.json({eventData: data}); 
+      const slotQuery = "SELECT date, slot_score_list FROM time_slots WHERE event_id = ?";
+      connEvents.query(slotQuery, id, (err, data2) => {
+          if (err) {
+            console.log(err.red);
+          } else {
+              response.json({
+                  pickerData: data1.rows[0],
+                  presenterData: data2.rows
+              });
+          }
+      });
     }
   })
 });
 
-//update the server with the attendee's preferences 
-app.post("/attend/:id/updatetimeslot", function(request, resposne) {
-  //get variables from request (might get errors if not in params)
-  var id = request.params.id;
-  var attendee_name = request.params.attendee_name;
-  //i do the check with the empty string because emails and locations are optional
-  var attendee_email = "";
-  if (request.params.attendee_email) {
-    attendee_email = request.params.attendee_email;
-  }
-  var slotinfo = request.params.slotinfo;
-  var location_votes = "";
-  if (request.params.location_votes) {
-    location_votes = request.params.location_votes;
-  }
-  //get all the names, emails, and location votes for the event
-  var eventInfoeQuery = "SELECT attendee_names, attendee_emails, location_votes FROM events WHERE id = ?"; 
-  var old_names = "";
-  var old_emails = "";
-  var old_location_votes = "";
-  conn.query(eventInfoQuery, id, function(err, data){
-    if (err) {
-      console.log(err);
-    } else {
-      //assign variables with results from query
-      var row = data.data.rows;
-      old_names = row.attendee_names;
-      old_emails = row.attndee_emails;
-      old_location_votes = row.location_votes;
-    }
-  });
-  //create the new entries using the data just retrieved from the DB and the data from request.params
-  var new_names = old_names + "," + attendee_name;
-  var new_emails = "";
-  if (attendee_email) {
-    new_emails = old_emails + "," + attendee_email;
-  }
-  var new_location_votes = "";
-  if (location_votes) {
-    new_location_votes = old_location_votes + "," + location_votes;
-  }
-  //update events with new vars created right above 
-  var updateEvents = "UPDATE events \
-                      SET attendee_names = ?, attendee_emails = ?, location_votes = ? \
-                      WHERE id = ?";
-  conn.query(updateEvents, new_names, new_emails, new_location_votes, id, function(err, data) {
-    if (err) {
-      console.log(err);
-    }
-  });
-  //update time_slots table with time slots from request
-  var slotsToInsert = [];
-  for (slot in slotinfo) {
-    var currSlot = slotinfo[slot];
-    var currInfo = [id, attendee_name, currSlot["Date"], currSlot["slotScoreList"]];
-    slotsToInsert.push(currInfo);
-  }
-  var addToTimeSlots = "INSERT INTO time_slots (event_id, attendee_name, date, slot_score_list) VALUES ?";
-  conn.query(addToTimeSlots, slotsToInsert, function(err, data) {
-    if (err) {
-      console.log(err);
-    }
-  });
+app.post('/attend/updatetimeslots/:id', (req, res) => {
+    const id = req.params.id;
+    const pickerData = JSON.parse(req.body.pickerData);
+    const sql = "SELECT date, slot_score_list FROM time_slots WHERE event_id = ?";
+    connEvents.query(sql, id, (err, data) => {
+        if (err) {
+            console.log(err.red);
+        } else {
+            if (data.rows.length === 0) {
+                for (let item of pickerData) {
+                    const sql = "INSERT INTO time_slots(event_id, date, slot_score_list) VALUES($1,$2,$3)";
+                    connEvents.query(sql, [id, item.date, item.slotScoreList.join()], (err, data) => {
+                        if (err) {
+                            console.log(err.red);
+                        } else {
+                            console.log(data.blue);
+                        }
+                    });
+                }
+            } else {
+                for (let row of data.rows) {
+                    let tmp = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+                    let arr = !!row.slot_score_list ? row.slot_score_list.split(',') : tmp;
+                    for (let item of pickerData) {
+                        if (item.date == row.date) {
+                            for (let i = 0; i < 48; i++) {
+                                arr[i] = parseInt(arr[i]) + parseInt(item.slotScoreList[i]);
+                            }
+                            break;
+                        }
+                    }
+                    const sql = "UPDATE time_slots SET slot_score_list = $1 WHERE date = $2 and event_id = $3";
+                    connEvents.query(sql, [arr.join(), row.date, id], (err, data) => {
+                        if (err) {
+                            console.log(err.red);
+                        } else {
+                            console.log(data.blue);
+                        }
+                    });
+                }
+            }
+
+            const slotQuery = "SELECT date, slot_score_list FROM time_slots WHERE event_id = ?";
+            connEvents.query(slotQuery, id, (err, data2) => {
+                if (err) {
+                    console.log(err.red);
+                } else {
+                    res.json({
+                        presenterData: data2.rows
+                    });
+                }
+            });
+        }
+    });
 });
 
 // 404

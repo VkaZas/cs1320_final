@@ -40,7 +40,7 @@ function () {
   _createClass(TimeSlotWidget, [{
     key: "renderPicker",
     value: function renderPicker(slotList) {
-      this.slotData = slotList;
+      this.slotData = _.cloneDeep(slotList);
       this.$pickerContainer.empty();
       var $pickerTable = $('<table id="picker-table"></table>');
       this.$pickerContainer.append($pickerTable); // Paint table
@@ -180,16 +180,18 @@ function () {
       try {
         for (var _iterator3 = this.slotData[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
           var slot = _step3.value;
-          var colGrid = this.$pickerContainer.find("td[data-date=".concat(slot.date, "]"));
+          var colGrid = this.$pickerContainer.find("td[data-date=\"".concat(slot.date, "\"]"));
           var arr = [];
 
-          for (var i = 16; i < 41; i++) {
-            var $ele = colGrid[i - 16];
+          for (var i = 0; i < 48; i++) {
+            arr.push(0);
+          }
+
+          for (var _i2 = 16; _i2 < 41; _i2++) {
+            var $ele = $(colGrid[_i2 - 16]);
 
             if ($ele.hasClass('selected')) {
-              if ($ele.hasClass('priority-1')) arr.push(3);else if ($ele.hasClass('priority-2')) arr.push(2);else if ($ele.hasClass('priority-3')) arr.push(1);
-            } else {
-              arr.push(-1);
+              if ($ele.hasClass('priority-1')) arr[_i2] = 3;else if ($ele.hasClass('priority-2')) arr[_i2] = 2;else if ($ele.hasClass('priority-3')) arr[_i2] = 1;
             }
           }
 
@@ -247,11 +249,12 @@ function () {
         }
       }
 
+      $firstRow.find('td').addClass('unselectable');
       $presenterTable.append($firstRow);
 
       for (var i = 16; i < 41; i++) {
         var $row = $('<tr></tr>');
-        $row.append("<td>".concat(i % 2 === 0 ? parseInt(i / 2) : '', "</td>"));
+        $row.append("<td class=\"unselectable\">".concat(i % 2 === 0 ? parseInt(i / 2) : '', "</td>"));
         var _iteratorNormalCompletion5 = true;
         var _didIteratorError5 = false;
         var _iteratorError5 = undefined;
