@@ -10,6 +10,7 @@
     "any-db-sqlite3": "^2.1.4",
     "body-parser": "^1.18.2",
     "build-url": "^1.1.1",
+    "calendar-js": "^1.4.4",
     "colors": "^1.2.1",
     "express": "^4.16.3",
     "node-cron": "^1.2.1",
