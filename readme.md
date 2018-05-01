@@ -20,4 +20,4 @@ You can select your time slots with different priorities and submit them. These 
 backend and database. And the calculated freedom priority calendar(on the right) will be updated, too. 
 The gray scale of the time slot indicates the overall freedom choose by people.
  
-The event creating API is available via `/event/createevent`, but the page is still under construction.
+The event creating API is available via `/event/create`, but the page is still under construction.
