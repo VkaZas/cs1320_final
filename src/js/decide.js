@@ -1,31 +1,61 @@
-var CollapsibleInstance;
+let CollapsibleInstance;
 $(document).ready(function(){
     M.AutoInit();
-    var elem = document.querySelector('.collapsible');
+    let elem = document.querySelector('.collapsible');
     CollapsibleInstance = M.Collapsible.init(elem);
 
-// location initialization
-    initLoc();
-// email initialization
-    initEmail();
+    const eventID = document.querySelector('meta[name=eventID]').content;
+    $.post(`/attend/${eventID}`, {id: eventID}, (data) => {
+
+        console.log(data);
+        // location initialization
+        initLoc(data);
+        // email initialization
+        initEmail(data);
+    });
+
 });
 
-function initLoc(){
-    var locations = [["CIT", 4], ["SCILab", 8], ["Main Green", 5]];
-    var $form = $('#location-chart');
-    var total = 0;
-    for (var i = 0; i < locations.length; i++) {
-        total += locations[i][1];
-        console.log(locations[i][1], total);
+function initLoc(data){
+    let sample_locations = [["CIT", 4], ["SCILab", 8], ["Main Green", 5]];
+    const locations = data.pickerData.locations.split(',');
+    let num_attendents = data.pickerData.attendee_names;
+    if (num_attendents == null) {
+        num_attendents = 0;
+    } else {
+        num_attendents = num_attendents.split(',').length;
     }
-    for (var i = 0; i < locations.length; i++) {
-        var $p = $('<p></p>');
-        var $label = $('<label></label>');
-        var input = $('<input class="with-gap" name="locations" type="radio" value="' +
-            locations[i][0] + '">');
-        var width = locations[i][1] / total * 80;
-        var span = $('<span class="location-bar" style="width: ' + width + '%' +
-            '"></span><span>' + locations[i][0] + ' (' + locations[i][1] + '/' + total + ')' +
+    let location_data = [];//data.pickerData.locations_votes;
+    if (data.pickerData.locations_votes == null){
+        for (let loc of locations){
+            location_data.push({
+                location: loc,
+                vote: 0,
+                width: 10,
+            });
+        }
+    } else {
+        let location_votes = data.pickerData.location_votes.split(',');
+        for (let i = 0; i < locations.length; i++){
+            let vote = parseInt(location_votes[i]);
+            location_data.push({
+                location: locations[i],
+                vote: vote,
+                width: num_attendents == 0 ? 10 : vote / num_attendents * 90 + 10,
+            });
+        }
+    }
+    let $form = $('#location-chart');
+
+    for (let d of location_data) {
+        let location = d.location;
+        let location_vote = d.vote;
+        let $p = $('<p></p>');
+        let $label = $('<label></label>');
+        let input = $('<input class="with-gap" name="locations" type="radio" value="' +
+            location + '">');
+        let span = $('<span class="location-bar" style="width: ' + d.width + '%' +
+            '"></span><span>' + location + ' (' + location_vote + '/' + num_attendents + ')' +
              '</span>');
         $label.append(input);
         $label.append(span);
@@ -39,34 +69,51 @@ function removeTip(elem) {
     console.log(elem);
 }
 
-function initEmail(){
-    var recipients=[["Helen","a@b.com"], ["Pamela","c@d.com"]];
-    var data = [];
-    for (var i = 0; i < recipients.length; i++) {
+function onChipAdd(elem) {
+    console.log("on chip add!");
+    let chips = $('#email-recipients .chip');
+    console.log(chips);
+    $('#num-recipients')[0].innerText = chips.length;
+}
+
+function initEmail(initdata){
+    let recipients=[["Helen","a@b.com"], ["Pamela","c@d.com"]];
+    let emails = initdata.pickerData.attendee_emails;
+    if (emails == null){
+        emails = [];
+    } else {
+        emails = emails.split(',');
+    }
+    let data = [];
+    for (let i = 0; i < emails.length; i++) {
         data.push({
-            tag: recipients[i][0]
+            tag: emails[i],
         });
     }
+    console.log(data);
     $('.chips-initial').chips({
         data: data,
         placeholder: 'Enter emails',
         secondaryPlaceholder: '+ Email',
         onChipDelete: removeTip,
+        onChipAdd: onChipAdd,
     });
 
-    var chips = $('#email-recipients .chip');
-    for (var i = 0; i < chips.length; i++) {
-        chips[i].className += " tooltipped";
-        chips[i].setAttribute("data-position", "top");
-        chips[i].setAttribute("data-tooltip", recipients[i][1]);
-        chips[i].setAttribute("margin", 2);
-    }
+    // let chips = $('#email-recipients .chip');
+    // for (let i = 0; i < chips.length; i++) {
+    //     chips[i].className += " tooltipped";
+    //     chips[i].setAttribute("data-position", "top");
+    //     chips[i].setAttribute("data-tooltip", recipients[i][1]);
+    //     chips[i].setAttribute("margin", 2);
+    // }
+    //
+    // $('.tooltipped').tooltip();
 
-    $('.tooltipped').tooltip();
-
-    var email_header = $('#email-header');
-    var recipients = chips.length;
-    email_header.append($('<span class="new badge" data-badge-caption="recipients">' + recipients + '</span>'));
+    let email_header = $('#email-header');
+    let num_recipients = emails.length;
+    let span = $('<span class="new badge" id="num-recipients" data-badge-caption="recipients">' +
+        num_recipients + '</span>');
+    email_header.append(span);
 }
 
 
@@ -78,12 +125,12 @@ function confirmTime() {
 function confirmLocation() {
     CollapsibleInstance.close(1);
     CollapsibleInstance.open(2);
-    var location = $('input[name=locations]:checked').val();
+    let location = $('input[name=locations]:checked').val();
     if (location == "" || location == undefined){
         return
     }
-    var loc_header = $('#location-header');
-    var span = $('#location-header span');
+    let loc_header = $('#location-header');
+    let span = $('#location-header span');
     if (span.length == 0) {
         span = $('<span class="new badge" data-badge-caption="">'+location + '</span>');
         loc_header.append(span);
@@ -92,7 +139,7 @@ function confirmLocation() {
         span[0].innerText = location;
         return;
     }
-/*    var icon = loc_header.firstChild;
+/*    let icon = loc_header.firstChild;
     loc_header.innerHTML = "";
     loc_header.append(icon);
     loc_header.append("Location: " + location);
