@@ -10,6 +10,8 @@ const uuidv4 = require('uuid/v4');
 var buildUrl = require('build-url');
 var nodemailer = require('nodemailer');
 var calendar = require('calendar-js');
+var cron = require('node-schedule');
+
 // View engine
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
@@ -22,7 +24,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 //Database
 var anyDB = require('any-db');
 var connEvents = anyDB.createConnection('sqlite3://events.db');
-var connTimeSlots = anyDB.createConnection('sqlite3://time_slots.db');
 
 var events = "CREATE TABLE events ( \
   id TEXT PRIMARY KEY, \
@@ -93,9 +94,24 @@ app.post('/event/createEvent', function(request, response) {
   var end_date = request.body.end_date;
   var end_time_list = request.body.end_time_list;
   var locations = request.body.locations;
-
-  var createNewEvent = "INSERT INTO events (id, name, creator_email, start_date, start_time_list, end_date, end_time_list, locations) VALUES($1,$2,$3,$4,$5,$6,$7,$8)";
-  connEvents.query(createNewEvent,[id,event_name,creator_email,start_date,start_time_list,end_date,end_time_list,locations],function(err,data) {
+  var createNewEvent = "INSERT INTO events \
+                      (id, name, \
+                        creator_email, \
+                        start_date, \
+                        start_time_list, \
+                        end_date, \
+                        end_time_list, \
+                        locations) VALUES($1,$2,$3,$4,$5,$6,$7,$8)";
+  connEvents.query(createNewEvent,
+                    [id,
+                    event_name,
+                    creator_email,
+                    start_date,
+                    start_time_list,
+                    end_date,
+                    end_time_list,
+                    locations],
+                    function(err,data) {
     if (err) {
       console.log(err);
       //maybe alert the user and redirect somewhere?
@@ -139,7 +155,13 @@ app.get('/attend/:id', function(request, response) {
 //get the information for a particular event and send it to the client 
 app.post('/attend/:id', function(request, response) {
   var id = request.params.id;
-  var eventQuery = "SELECT name, locations, location_votes, start_date, end_date, start_time_list, end_time_list FROM events WHERE id = ?";
+  var eventQuery = "SELECT name, \
+                    locations, \
+                    location_votes, \
+                    start_date, \
+                    end_date, \
+                    start_time_list, \
+                    end_time_list FROM events WHERE id = ?";
   connEvents.query(eventQuery, id, function(err, data1) {
     if (err) {
       console.log(err);
@@ -181,7 +203,12 @@ app.post('/attend/updatetimeslots/:id', (req, res) => {
                 }
             } else {
                 for (let row of data.rows) {
-                    let tmp = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+                    let tmp = [0,0,0,0,0,0,0,0,
+                              0,0,0,0,0,0,0,0,
+                              0,0,0,0,0,0,0,0,
+                              0,0,0,0,0,0,0,0,
+                              0,0,0,0,0,0,0,0,
+                              0,0,0,0,0,0,0,0];
                     let arr = !!row.slot_score_list ? row.slot_score_list.split(',') : tmp;
                     for (let item of pickerData) {
                         if (item.date == row.date) {
@@ -216,11 +243,115 @@ app.post('/attend/updatetimeslots/:id', (req, res) => {
     });
 });
 
-// 404
-app.use((req, res) => {
-    res.status = 404;
-    res.json('error');
+//return the pug files for the decide page
+app.get('/event/:id/decide', (req, res) => {
+  res.render('decide');
 });
 
+//schedule email
+app.post('/event/:id/decide', (req, res) => {
+  const id = req.params.id;
+  const decided_time_start = req.body.decided_time_start;
+  const decided_time_end = req.body.decided_time_end;
+  const decided_date = req.body.decided_date;
+  var valid_date = true;
+  validateDate(decided_date, valid_date);
+  if (!valid_date) {
+    //have to do something if this fails
+  }
+  var valid_start = true;
+  var valid_end = true;
+  validateTime(decided_time_start, valid_start);
+  validateTime(decided_time_end, valid_end);
+  if (!(valid_start && valid_end)) {
+    //have to do something if this fails
+  }
+  var decided_location = "";
+  if (req.body.decided_location) {
+    decided_location = req.body.decided_location;
+  }
+  var attendee_emails = req.body.attendee_emails;
+  attendee_emails = attendee_emails.split(',');
+  const decisionQuery = "UPDATE events SET decided_start_time = $1, decided_end_time = $2, \
+                         decided_date = $3, decided_location = $4 WHERE id = $5";
+  connEvents.query(decisionQuery,
+                  decided_time_start,
+                  decided_time_end,
+                  decided_date,
+                  decided_location,
+                  id,
+                  (err, data) => {
+    if (err) {
+      console.log(err.red);
+    } else {
+      var event_name = "";
+      const eventNameQuery = "SELECT name FROM events WHERE id = ?";
+      connEvents.query(eventNameQuery, id, (err, data) => {
+        if (err) {
+          console.log(err.red);
+        } else {
+          //not sure about this syntax but something like this
+          event_name = data.name;
+        }
+      });
+      var emailReminderDate = new Date(decided_date.getFullYear(),
+                                  decided_date.getMonth(),
+                                  decided_date.getDay(),
+                                  0,
+                                  0);
+      cron.scheduleJob(emailReminderDate, function() {
+        for (e in attendee_emails) {
+          var email = attendee_emails[e];
+          var email_body = 'Reminder! You have event: ' +
+                          event_name +
+                          ' starting at ' +
+                          decided_time_start
+          if (decided_location) {
+            email_body = email_body + ' in ' + decided_location;
+          }
+          var mailoptions = {
+            from: 'meetng132@gmail.com',
+            to: email,
+            subject: 'Reminder for your event: ' + event_name,
+            text: email_body
+          };
+          transporter.sendMail(mailoptions, function(err, data) {
+            if (err) {
+              console.log(err);
+            } else {
+              //don't know what we'd do here?
+            }
+          });
+        }
+      });
+    }
+  })
+});
+
+// 404
+app.get("*", (req, res) => {
+  res.send('error');
+})
+
+//Helper Functions
+function validateTime(time, valid) {
+  var time_check = time.split(":");
+  var t0 = parseInt(time_check[0]);
+  var t1 = parseInt(time_check[1]);
+  if (t0 < 0 || t0 > 23 || t1 < 0 || t1 > 59) {
+    console.log("Invalid start or end time".red);
+    valid = false;
+  }
+}
+
+function validateDate(date, valid) {
+  var date_check = Date.parse(date);
+  if (isNan(date_check)) {
+    console.log("Invalid date".red);
+    valid = false;
+  }
+}
+
+//Listener
 app.listen(8080);
 console.log('Server is listening to port 8080.'.green);
