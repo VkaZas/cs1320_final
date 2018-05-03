@@ -77,7 +77,6 @@ app.post('/event/createEvent', function(request, response) {
   var end_date = request.body.end_date;
   var end_time_list = request.body.end_time_list;
   var locations = request.body.locations;
-
   var createNewEvent = "INSERT INTO events \
                       (id, name, \
                         creator_email, \
@@ -238,11 +237,24 @@ app.post('/event/:id/decide', (req, res) => {
   const decided_time_start = req.body.decided_time_start;
   const decided_time_end = req.body.decided_time_end;
   const decided_date = req.body.decided_date;
+  var valid_date = true;
+  validateDate(decided_date, valid_date);
+  if (!valid_date) {
+    //have to do something if this fails
+  }
+  var valid_start = true;
+  var valid_end = true;
+  validateTime(decided_time_start, valid_start);
+  validateTime(decided_time_end, valid_end);
+  if (!(valid_start && valid_end)) {
+    //have to do something if this fails
+  }
   var decided_location = "";
   if (req.body.decided_location) {
     decided_location = req.body.decided_location;
   }
-  const attendee_emails = JSON.parse(req.body.attendee_emails);
+  var attendee_emails = req.body.attendee_emails;
+  attendee_emails = attendee_emails.split(',');
   const decisionQuery = "UPDATE events SET decided_start_time = $1, decided_end_time = $2, \
                          decided_date = $3, decided_location = $4 WHERE id = $5";
   connEvents.query(decisionQuery,
@@ -300,10 +312,29 @@ app.post('/event/:id/decide', (req, res) => {
 });
 
 // 404
-app.use((req, res) => {
-    res.status = 404;
-    res.json('error');
-});
+app.get("*", (req, res) => {
+  res.send('error');
+})
 
+//Helper Functions
+function validateTime(time, valid) {
+  var time_check = time.split(":");
+  var t0 = parseInt(time_check[0]);
+  var t1 = parseInt(time_check[1]);
+  if (t0 < 0 || t0 > 23 || t1 < 0 || t1 > 59) {
+    console.log("Invalid start or end time".red);
+    valid = false;
+  }
+}
+
+function validateDate(date, valid) {
+  var date_check = Date.parse(date);
+  if (isNan(date_check)) {
+    console.log("Invalid date".red);
+    valid = false;
+  }
+}
+
+//Listener
 app.listen(8080);
 console.log('Server is listening to port 8080.'.green);
