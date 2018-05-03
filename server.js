@@ -68,7 +68,6 @@ app.get('/event/create', function(request, response) {
   var year = date.getFullYear();
   var month = date.getMonth();
   var calArray = calendar().of(year, month).calendar;
-  console.log(calArray);
   a = {month: calendar().of(year, month).month}
   for(var i=0; i< calArray.length; i++){
     for(var j = 0; j<calArray[0].length; j++){
@@ -78,7 +77,6 @@ app.get('/event/create', function(request, response) {
         a["a"+(i*7+j)] = '';
     }
   }
-  console.log(a)
 	response.render('index', a);
   
 });
@@ -257,14 +255,25 @@ app.post('/event/:id/decide', (req, res) => {
   var valid_date = true;
   validateDate(decided_date, valid_date);
   if (!valid_date) {
-    //have to do something if this fails
+    console.log("invalid date")
   }
   var valid_start = true;
   var valid_end = true;
-  validateTime(decided_time_start, valid_start);
-  validateTime(decided_time_end, valid_end);
-  if (!(valid_start && valid_end)) {
-    //have to do something if this fails
+  if (decided_time_start) {
+    validateTime(decided_time_start, valid_start);
+  } else {
+    console.log("invalid start time");
+  }
+  if (decided_time_end) {
+    validateTime(decided_time_end, valid_end);
+  } else {
+    console.log("invalid end time");
+  }
+  if (!valid_start) {
+    console.log("invalid start time");
+  } 
+  if (!valid_end) {
+    console.log("invalid end time");
   }
   var decided_location = "";
   if (req.body.decided_location) {
@@ -346,12 +355,12 @@ function validateTime(time, valid) {
 
 function validateDate(date, valid) {
   var date_check = Date.parse(date);
-  if (isNan(date_check)) {
+  if (isNaN(date_check)) {
     console.log("Invalid date".red);
     valid = false;
   }
 }
 
 //Listener
-app.listen(8080);
-console.log('Server is listening to port 8080.'.green);
+app.listen(8081);
+console.log('Server is listening to port 8081.'.green);
