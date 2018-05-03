@@ -9,6 +9,7 @@ const index = require('./routes/index');
 const uuidv4 = require('uuid/v4');
 var buildUrl = require('build-url');
 var nodemailer = require('nodemailer');
+var calendar = require('calendar-js');
 var cron = require('node-schedule');
 
 // View engine
@@ -63,7 +64,21 @@ var transporter = nodemailer.createTransport({
 
 //get the create page up for the creator to start making the event
 app.get('/event/create', function(request, response) {
-	response.render('index');
+  var date = new Date();
+  var year = date.getFullYear();
+  var month = date.getMonth();
+  var calArray = calendar().of(year, month).calendar;
+  a = {month: calendar().of(year, month).month}
+  for(var i=0; i< calArray.length; i++){
+    for(var j = 0; j<calArray[0].length; j++){
+      if(calArray[i][j] != 0)
+        a["a"+(i*7+j)] = calArray[i][j];
+      else
+        a["a"+(i*7+j)] = '';
+    }
+  }
+	response.render('index', a);
+  
 });
 
 
@@ -77,7 +92,6 @@ app.post('/event/createEvent', function(request, response) {
   var end_date = request.body.end_date;
   var end_time_list = request.body.end_time_list;
   var locations = request.body.locations;
-
   var createNewEvent = "INSERT INTO events \
                       (id, name, \
                         creator_email, \
@@ -240,11 +254,35 @@ app.post('/event/:id/decide', (req, res) => {
   const decided_time_start = req.body.decided_time_start;
   const decided_time_end = req.body.decided_time_end;
   const decided_date = req.body.decided_date;
+  var valid_date = true;
+  validateDate(decided_date, valid_date);
+  if (!valid_date) {
+    console.log("invalid date")
+  }
+  var valid_start = true;
+  var valid_end = true;
+  if (decided_time_start) {
+    validateTime(decided_time_start, valid_start);
+  } else {
+    console.log("invalid start time");
+  }
+  if (decided_time_end) {
+    validateTime(decided_time_end, valid_end);
+  } else {
+    console.log("invalid end time");
+  }
+  if (!valid_start) {
+    console.log("invalid start time");
+  } 
+  if (!valid_end) {
+    console.log("invalid end time");
+  }
   var decided_location = "";
   if (req.body.decided_location) {
     decided_location = req.body.decided_location;
   }
-  const attendee_emails = JSON.parse(req.body.attendee_emails);
+  var attendee_emails = req.body.attendee_emails;
+  attendee_emails = attendee_emails.split(',');
   const decisionQuery = "UPDATE events SET decided_start_time = $1, decided_end_time = $2, \
                          decided_date = $3, decided_location = $4 WHERE id = $5";
   connEvents.query(decisionQuery,
@@ -302,10 +340,29 @@ app.post('/event/:id/decide', (req, res) => {
 });
 
 // 404
-app.use((req, res) => {
-    res.status = 404;
-    res.json('error');
-});
+app.get("*", (req, res) => {
+  res.send('error');
+})
 
-app.listen(8080);
-console.log('Server is listening to port 8080.'.green);
+//Helper Functions
+function validateTime(time, valid) {
+  var time_check = time.split(":");
+  var t0 = parseInt(time_check[0]);
+  var t1 = parseInt(time_check[1]);
+  if (t0 < 0 || t0 > 23 || t1 < 0 || t1 > 59) {
+    console.log("Invalid start or end time".red);
+    valid = false;
+  }
+}
+
+function validateDate(date, valid) {
+  var date_check = Date.parse(date);
+  if (isNaN(date_check)) {
+    console.log("Invalid date".red);
+    valid = false;
+  }
+}
+
+//Listener
+app.listen(8081);
+console.log('Server is listening to port 8081.'.green);
