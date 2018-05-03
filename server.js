@@ -9,6 +9,7 @@ const index = require('./routes/index');
 const uuidv4 = require('uuid/v4');
 var buildUrl = require('build-url');
 var nodemailer = require('nodemailer');
+var calendar = require('calendar-js');
 var cron = require('node-schedule');
 
 // View engine
@@ -63,7 +64,23 @@ var transporter = nodemailer.createTransport({
 
 //get the create page up for the creator to start making the event
 app.get('/event/create', function(request, response) {
-	response.render('index');
+  var date = new Date();
+  var year = date.getFullYear();
+  var month = date.getMonth();
+  var calArray = calendar().of(year, month).calendar;
+  console.log(calArray);
+  a = {month: calendar().of(year, month).month}
+  for(var i=0; i< calArray.length; i++){
+    for(var j = 0; j<calArray[0].length; j++){
+      if(calArray[i][j] != 0)
+        a["a"+(i*7+j)] = calArray[i][j];
+      else
+        a["a"+(i*7+j)] = '';
+    }
+  }
+  console.log(a)
+	response.render('index', a);
+  
 });
 
 
