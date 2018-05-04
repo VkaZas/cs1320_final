@@ -112,10 +112,8 @@ app.post('/event/createEvent', function(request, response) {
                     function(err,data) {
     if (err) {
       console.log(err);
-      //maybe alert the user and redirect somewhere?
     } else {
       //create link to emit to email to the creator
-      //how are we doing this - locally or serving this on aws or something like that? 
       var decision_url = buildUrl('http://localhost:8080', {
         path: 'event/' + id + '/decide'
       });
@@ -127,7 +125,7 @@ app.post('/event/createEvent', function(request, response) {
         text: 'Here\'s your link! ' + decision_url
       };
       //url we're sending to the creator so they can send it to attendees
-      var attend_url = buildUrl('hhtp://localhost:8080', {
+      var attend_url = buildUrl('hhtp://localhost:8081', {
         path: 'attend/' + id
       });
       //send email to creator with link to 
@@ -194,8 +192,6 @@ app.post('/attend/updatetimeslots/:id', (req, res) => {
                     connEvents.query(sql, [id, item.date, item.slotScoreList.join()], (err, data) => {
                         if (err) {
                             console.log(err.red);
-                        } else {
-                            console.log(data.blue);
                         }
                     });
                 }
@@ -220,10 +216,16 @@ app.post('/attend/updatetimeslots/:id', (req, res) => {
                     connEvents.query(sql, [arr.join(), row.date, id], (err, data) => {
                         if (err) {
                             console.log(err.red);
-                        } else {
-                            console.log(data.blue);
                         }
                     });
+                    var selectCheck = "SELECT * FROM time_slots WHERE event_id = ?";
+                    connEvents.query(selectCheck, id, function(err, data) {
+                      if (err) {
+                        console.log(err);
+                      } else {
+                        console.log(data);
+                      }
+                    })
                 }
             }
 
@@ -281,60 +283,61 @@ app.post('/event/:id/decide', (req, res) => {
   }
   var attendee_emails = req.body.attendee_emails;
   attendee_emails = attendee_emails.split(',');
-  const decisionQuery = "UPDATE events SET decided_start_time = $1, decided_end_time = $2, \
-                         decided_date = $3, decided_location = $4 WHERE id = $5";
+  const decisionQuery = "UPDATE events \
+                        SET decided_start_time = $1, decided_end_time = $2, \
+                        decided_date = $3, decided_location = $4 \
+                        WHERE id = $5";
   connEvents.query(decisionQuery,
-                  decided_time_start,
-                  decided_time_end,
-                  decided_date,
-                  decided_location,
-                  id,
+                  [decided_time_start,
+                    decided_time_end,
+                    decided_date,
+                    decided_location,
+                    id],
                   (err, data) => {
     if (err) {
       console.log(err.red);
     } else {
       var event_name = "";
       const eventNameQuery = "SELECT name FROM events WHERE id = ?";
-      connEvents.query(eventNameQuery, id, (err, data) => {
+      connEvents.query(eventNameQuery, id, function(err, data) {
         if (err) {
           console.log(err.red);
         } else {
-          //not sure about this syntax but something like this
-          event_name = data.name;
-        }
-      });
-      var emailReminderDate = new Date(decided_date.getFullYear(),
+          event_name = data.rows[0].name;
+          var emailReminderDate = new Date(decided_date.getFullYear(),
                                   decided_date.getMonth(),
                                   decided_date.getDay(),
                                   0,
                                   0);
-      cron.scheduleJob(emailReminderDate, function() {
-        for (e in attendee_emails) {
-          var email = attendee_emails[e];
-          var email_body = 'Reminder! You have event: ' +
-                          event_name +
-                          ' starting at ' +
-                          decided_time_start
-          if (decided_location) {
-            email_body = email_body + ' in ' + decided_location;
-          }
-          var mailoptions = {
-            from: 'meetng132@gmail.com',
-            to: email,
-            subject: 'Reminder for your event: ' + event_name,
-            text: email_body
-          };
-          transporter.sendMail(mailoptions, function(err, data) {
-            if (err) {
-              console.log(err);
-            } else {
-              //don't know what we'd do here?
+          cron.scheduleJob(emailReminderDate, function() {
+            for (e in attendee_emails) {
+              var email = attendee_emails[e];
+              var email_body = 'Reminder! You have event: ' +
+                              event_name +
+                              ' starting at ' +
+                              decided_time_start;
+              if (decided_location) {
+                email_body = email_body + ' in ' + decided_location;
+              }
+              var mailoptions = {
+                from: 'meetng132@gmail.com',
+                to: email,
+                subject: 'Reminder for your event: ' + event_name,
+                text: email_body
+              };
+              transporter.sendMail(mailoptions, function(err, data) {
+                if (err) {
+                  console.log(err);
+                } else {
+                  console.log("email scheduled");
+                }
+              });
             }
           });
         }
       });
     }
-  })
+  });
 });
 
 // 404
