@@ -5,7 +5,7 @@ block links
     link(rel='stylesheet', href='http://materializecss.com/css/ghpages-materialize.css')
     script(src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js")
     script(src='/js/decide.js')
-    //meta(name="eventID", content=id)
+    meta(name="eventID", content=id)
 
 block body-content
     //.container#typeform-container
@@ -38,12 +38,12 @@ block body-content
                         .row
                             p.caption Recipients:
                             i.material-icons.prefix account_circle
-                            #email-recipients.chips.chips-initial.input-field.inline
+                            #email-recipients.chips.chips-initial.chips-placeholder.input-field.inline.validate(type="email")
 
-                        .row
-                            .input-field
-                                textarea#email-text.materialize-textarea(data-length="500")
-                                label(for="email-text") Email content
+                        //.row
+                        //    .input-field
+                        //        textarea#email-text.materialize-textarea(data-length="500")
+                        //        label(for="email-text") Email content
                     #emial-confirm.confirm
                         a.waves-effect.waves-light.btn(onclick="confirmEmail()") Submit
                             i.material-icons.right send

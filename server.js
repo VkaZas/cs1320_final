@@ -151,13 +151,14 @@ app.get('/attend/:id', function(request, response) {
 //get the information for a particular event and send it to the client 
 app.post('/attend/:id', function(request, response) {
   var id = request.params.id;
-  var eventQuery = "SELECT name, \
-                    locations, \
-                    location_votes, \
-                    start_date, \
-                    end_date, \
-                    start_time_list, \
-                    end_time_list FROM events WHERE id = ?";
+  // var eventQuery = "SELECT name, \
+    //                   locations, \
+    //                   location_votes, \
+    //                   start_date, \
+    //                   end_date, \
+    //                   start_time_list, \
+    //                   end_time_list FROM events WHERE id = ?";
+    var eventQuery = "SELECT * FROM events WHERE id = ?";
   connEvents.query(eventQuery, id, function(err, data1) {
     if (err) {
       console.log(err);
@@ -244,8 +245,9 @@ app.post('/attend/updatetimeslots/:id', (req, res) => {
 });
 
 //return the pug files for the decide page
-app.get('/event/:id/decide', (req, res) => {
-  res.render('decide');
+app.get('/event/:id/decide', (request, response) => {
+    var id = request.params.id;
+    response.render('decide', {id: id});
 });
 
 //schedule email
