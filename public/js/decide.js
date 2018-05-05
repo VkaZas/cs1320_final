@@ -4,29 +4,83 @@ var CollapsibleInstance;
 $(document).ready(function () {
   M.AutoInit();
   var elem = document.querySelector('.collapsible');
-  CollapsibleInstance = M.Collapsible.init(elem); // location initialization
+  CollapsibleInstance = M.Collapsible.init(elem);
+  var eventID = document.querySelector('meta[name=eventID]').content;
+  $.post("/attend/".concat(eventID), {
+    id: eventID
+  }, function (data) {
+    console.log(data); // location initialization
 
-  initLoc(); // email initialization
+    initLoc(data); // email initialization
 
-  initEmail();
+    initEmail(data);
+  });
 });
 
-function initLoc() {
-  var locations = [["CIT", 4], ["SCILab", 8], ["Main Green", 5]];
-  var $form = $('#location-chart');
-  var total = 0;
+function initLoc(data) {
+  var sample_locations = [["CIT", 4], ["SCILab", 8], ["Main Green", 5]];
+  var locations = data.pickerData.locations.split(',');
+  var num_attendents = data.pickerData.attendee_names;
 
-  for (var i = 0; i < locations.length; i++) {
-    total += locations[i][1];
-    console.log(locations[i][1], total);
+  if (num_attendents == null) {
+    num_attendents = 0;
+  } else {
+    num_attendents = num_attendents.split(',').length;
   }
 
-  for (var i = 0; i < locations.length; i++) {
+  var location_data = []; //data.pickerData.locations_votes;
+
+  if (data.pickerData.locations_votes == null) {
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
+    var _iteratorError = undefined;
+
+    try {
+      for (var _iterator = locations[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+        var loc = _step.value;
+        location_data.push({
+          location: loc,
+          vote: 0,
+          width: 10
+        });
+      }
+    } catch (err) {
+      _didIteratorError = true;
+      _iteratorError = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion && _iterator.return != null) {
+          _iterator.return();
+        }
+      } finally {
+        if (_didIteratorError) {
+          throw _iteratorError;
+        }
+      }
+    }
+  } else {
+    var location_votes = data.pickerData.location_votes.split(',');
+
+    for (var i = 0; i < locations.length; i++) {
+      var vote = parseInt(location_votes[i]);
+      location_data.push({
+        location: locations[i],
+        vote: vote,
+        width: num_attendents == 0 ? 10 : vote / num_attendents * 90 + 10
+      });
+    }
+  }
+
+  var $form = $('#location-chart');
+
+  for (var _i = 0; _i < location_data.length; _i++) {
+    var d = location_data[_i];
+    var location = d.location;
+    var location_vote = d.vote;
     var $p = $('<p></p>');
     var $label = $('<label></label>');
-    var input = $('<input class="with-gap" name="locations" type="radio" value="' + locations[i][0] + '">');
-    var width = locations[i][1] / total * 80;
-    var span = $('<span class="location-bar" style="width: ' + width + '%' + '"></span><span>' + locations[i][0] + ' (' + locations[i][1] + '/' + total + ')' + '</span>');
+    var input = $('<input class="with-gap" name="locations" type="radio" value="' + location + '">');
+    var span = $('<span class="location-bar" style="width: ' + d.width + '%' + '"></span><span>' + location + ' (' + location_vote + '/' + num_attendents + ')' + '</span>');
     $label.append(input);
     $label.append(span);
     $p.append($label);
@@ -38,35 +92,52 @@ function removeTip(elem) {
   console.log(elem);
 }
 
-function initEmail() {
+function onChipAdd(elem) {
+  console.log("on chip add!");
+  var chips = $('#email-recipients .chip');
+  console.log(chips);
+  $('#num-recipients')[0].innerText = chips.length;
+}
+
+function initEmail(initdata) {
   var recipients = [["Helen", "a@b.com"], ["Pamela", "c@d.com"]];
+  var emails = initdata.pickerData.attendee_emails;
+
+  if (emails == null) {
+    emails = [];
+  } else {
+    emails = emails.split(',');
+  }
+
   var data = [];
 
-  for (var i = 0; i < recipients.length; i++) {
+  for (var i = 0; i < emails.length; i++) {
     data.push({
-      tag: recipients[i][0]
+      tag: emails[i]
     });
   }
 
+  console.log(data);
   $('.chips-initial').chips({
     data: data,
     placeholder: 'Enter emails',
     secondaryPlaceholder: '+ Email',
-    onChipDelete: removeTip
-  });
-  var chips = $('#email-recipients .chip');
+    onChipDelete: removeTip,
+    onChipAdd: onChipAdd
+  }); // let chips = $('#email-recipients .chip');
+  // for (let i = 0; i < chips.length; i++) {
+  //     chips[i].className += " tooltipped";
+  //     chips[i].setAttribute("data-position", "top");
+  //     chips[i].setAttribute("data-tooltip", recipients[i][1]);
+  //     chips[i].setAttribute("margin", 2);
+  // }
+  //
+  // $('.tooltipped').tooltip();
 
-  for (var i = 0; i < chips.length; i++) {
-    chips[i].className += " tooltipped";
-    chips[i].setAttribute("data-position", "top");
-    chips[i].setAttribute("data-tooltip", recipients[i][1]);
-    chips[i].setAttribute("margin", 2);
-  }
-
-  $('.tooltipped').tooltip();
   var email_header = $('#email-header');
-  var recipients = chips.length;
-  email_header.append($('<span class="new badge" data-badge-caption="recipients">' + recipients + '</span>'));
+  var num_recipients = emails.length;
+  var span = $('<span class="new badge" id="num-recipients" data-badge-caption="recipients">' + num_recipients + '</span>');
+  email_header.append(span);
 }
 
 function confirmTime() {
@@ -94,7 +165,7 @@ function confirmLocation() {
     span[0].innerText = location;
     return;
   }
-  /*    var icon = loc_header.firstChild;
+  /*    let icon = loc_header.firstChild;
       loc_header.innerHTML = "";
       loc_header.append(icon);
       loc_header.append("Location: " + location);

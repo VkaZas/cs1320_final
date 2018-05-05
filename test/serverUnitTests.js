@@ -32,6 +32,13 @@ describe('Basic Status Tests', function() {
 		});
 		done();
 	}).timeout(5000);
+
+	it('bad page', (done) => {
+		request('http://localhost:8081', function(err, res, body) {
+			expect(res.statusCode).to.equal(200);
+			done();
+		});
+	});
 });
 
 describe('Scheduling emails tests', function() {
@@ -123,16 +130,18 @@ var pickerData = JSON.stringify([{"date":"2018-05-05","slotScoreList":[date1,dat
 
 describe('Update time slots check', function() {
 	it('correct data passed, first response', (done) => {
-		superagent.post('http://localhost:8081/attend/updatetimeslots/3202abb5-d0d1-4a0c-be58-59a019170d43')
+		superagent.post('http://localhost:8081/attend/updatetimeslots/4d0668f2-978b-4987-8cb2-1494cf7ebd39')
 		.send({"pickerData":pickerData})
+		.send({"location":"CIT"})
 		.end(function(err, res) {
 			if (err) {
 				console.log(err);
 			} else {
 				expect(res.data.pickerData).to.equal([{"date":"2018-05-05","slotScoreList":[date1,date2,date3]}]);
+				expect(res.data.location).to.equal("CIT");
 			}
 		});
 		done();
-	}).timeout(10000);
+	}).timeout(100000);
 });
 

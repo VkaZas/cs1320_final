@@ -92,6 +92,17 @@ app.post('/event/createEvent', function(request, response) {
   var end_date = request.body.end_date;
   var end_time_list = request.body.end_time_list;
   var locations = request.body.locations;
+  var location_votes = ""
+  var split_locs = locations.split(',');
+  var split_len = split_locs.length;
+  for (s in split_locs) {
+    if ((parseInt(s) + 1) == split_len) {
+      location_votes += "0";
+    } else {
+      location_votes += "0,";
+    } 
+  }
+  console.log(location_votes);
   var createNewEvent = "INSERT INTO events \
                       (id, name, \
                         creator_email, \
@@ -99,7 +110,8 @@ app.post('/event/createEvent', function(request, response) {
                         start_time_list, \
                         end_date, \
                         end_time_list, \
-                        locations) VALUES($1,$2,$3,$4,$5,$6,$7,$8)";
+                        locations, \
+                        location_votes) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)";
   connEvents.query(createNewEvent,
                     [id,
                     event_name,
@@ -108,7 +120,8 @@ app.post('/event/createEvent', function(request, response) {
                     start_time_list,
                     end_date,
                     end_time_list,
-                    locations],
+                    locations,
+                    location_votes],
                     function(err,data) {
     if (err) {
       console.log(err);
@@ -151,18 +164,10 @@ app.get('/attend/:id', function(request, response) {
 //get the information for a particular event and send it to the client 
 app.post('/attend/:id', function(request, response) {
   var id = request.params.id;
-  // var eventQuery = "SELECT name, \
-    //                   locations, \
-    //                   location_votes, \
-    //                   start_date, \
-    //                   end_date, \
-    //                   start_time_list, \
-    //                   end_time_list FROM events WHERE id = ?";
     var eventQuery = "SELECT * FROM events WHERE id = ?";
   connEvents.query(eventQuery, id, function(err, data1) {
     if (err) {
       console.log(err);
-      //do we want to do anything more than this?
     } else {
       const slotQuery = "SELECT date, slot_score_list FROM time_slots WHERE event_id = ?";
       connEvents.query(slotQuery, id, (err, data2) => {
@@ -179,9 +184,14 @@ app.post('/attend/:id', function(request, response) {
   })
 });
 
+//update the db with the times/locations that user inputs
 app.post('/attend/updatetimeslots/:id', (req, res) => {
     const id = req.params.id;
     const pickerData = JSON.parse(req.body.pickerData);
+    var location = "";
+    if (req.body.location) {
+      location = req.body.location;
+    }
     const sql = "SELECT date, slot_score_list FROM time_slots WHERE event_id = ?";
     connEvents.query(sql, id, (err, data) => {
         if (err) {
@@ -219,14 +229,6 @@ app.post('/attend/updatetimeslots/:id', (req, res) => {
                             console.log(err.red);
                         }
                     });
-                    var selectCheck = "SELECT * FROM time_slots WHERE event_id = ?";
-                    connEvents.query(selectCheck, id, function(err, data) {
-                      if (err) {
-                        console.log(err);
-                      } else {
-                        console.log(data);
-                      }
-                    })
                 }
             }
 
@@ -235,6 +237,50 @@ app.post('/attend/updatetimeslots/:id', (req, res) => {
                 if (err) {
                     console.log(err.red);
                 } else {
+                    if (location) {
+                      const locationQuery = "SELECT location_votes, locations FROM events WHERE id = ?";
+                      console.log("setup done");
+                      connEvents.query(locationQuery, id, function(err, locData) {
+                        //this query doesn't happen - why?
+                        console.log("query happens");
+                        if (err) {
+                          console.log(err.red);
+                        } else {
+                          console.log(locData);
+                          // var locs = (data.rows[0].locations).split(',');
+                          // var locVotes = (data.rows[0].location_votes).split(',');
+                          // var currVotes = -1;
+                          // for (l in locs) {
+                          //   if (locs[l] == location) {
+                          //     currVote = parseInt(locVotes[l]) + 1;
+                          //     break;
+                          //   }
+                          // }
+                          // var newVotes = "";
+                          // var locVotesLen = locVotes.length;
+                          // for (l in locVotes) {
+                          //   if (locs[l] == location) {
+                          //     newVotes += currVote.toString();
+                          //   } else {
+                          //     newVotes += locVotes[l];
+                          //   }
+                          //   if (!(l+1 == locVotesLen)) {
+                          //     newVotes += ",";
+                          //   }
+                          // }
+                          // const insertLocQuery = "UPDATE events \
+                          //                         SET location_votes = $1 \
+                          //                         WHERE id = $2";
+                          // connEvents.query(insertLocQuery, [newVotes, id], (err, data) => {
+                          //   if (err) {
+                          //     console.log(err);
+                          //   } else {
+                          //     console.log("inserted");
+                          //   }
+                          // });
+                        }
+                      });
+                    }
                     res.json({
                         presenterData: data2.rows
                     });
@@ -306,9 +352,10 @@ app.post('/event/:id/decide', (req, res) => {
           console.log(err.red);
         } else {
           event_name = data.rows[0].name;
-          var emailReminderDate = new Date(decided_date.getFullYear(),
-                                  decided_date.getMonth(),
-                                  decided_date.getDay(),
+          var split_date = decided_date.split("-");
+          var emailReminderDate = new Date(parseInt(split_date[0]),
+                                  parseInt(split_date[1]) - 1,
+                                  parseInt(split_date[2]),
                                   0,
                                   0);
           cron.scheduleJob(emailReminderDate, function() {
@@ -330,8 +377,6 @@ app.post('/event/:id/decide', (req, res) => {
               transporter.sendMail(mailoptions, function(err, data) {
                 if (err) {
                   console.log(err);
-                } else {
-                  console.log("email scheduled");
                 }
               });
             }
