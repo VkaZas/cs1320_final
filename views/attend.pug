@@ -12,19 +12,15 @@ block body-content
     //    #embedded-typeform
     #info-container.col.l12
         .row
-            #email.input-field.col.l3.offset-l2
+            #name.input-field.col.l3.offset-l1
+                input(placeholder="(*)Your name...", type="text", class='validate', id="name-input")
+                label(for="name-input") Name
+            #email.input-field.col.l3.offset-l1
                 input(placeholder="Your email...", type="email", class='validate', id="email-input")
                 label(for="email-input") Email
-            #location.col.l3.offset-l2
+            #location.col.l3.offset-l1
                 form(action="#")
-                    p
 
-                        input(type="checkbox", id='location-1')
-                        label(for="location-1") CIT
-                    p
-
-                        input(type="checkbox" id='location-2')
-                        label(for="location-2") SCILIB
     #widget-container
     #button-container
         a.waves-effect.waves-light.btn#btn-submit Submit

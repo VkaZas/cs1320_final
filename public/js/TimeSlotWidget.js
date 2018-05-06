@@ -222,18 +222,19 @@ function () {
     value: function renderPresenter(data) {
       this.$presenterContainer.empty();
       var $presenterTable = $('<table id="presenter-table"></table>');
-      this.$presenterContainer.append($presenterTable); // Paint table
+      this.$presenterContainer.append($presenterTable); // Find maximum value
 
-      var $firstRow = $('<tr class="firstRow"></tr>').append('<td></td>');
+      var maxV = 0;
       var _iteratorNormalCompletion4 = true;
       var _didIteratorError4 = false;
       var _iteratorError4 = undefined;
 
       try {
         for (var _iterator4 = data[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-          var slot = _step4.value;
-          $firstRow.append($("<td>".concat(slot.date, "</td>")));
-        }
+          var _item = _step4.value;
+          maxV = Math.max(maxV, _.max(_item.scoreList));
+        } // Paint table
+
       } catch (err) {
         _didIteratorError4 = true;
         _iteratorError4 = err;
@@ -249,34 +250,59 @@ function () {
         }
       }
 
+      var $firstRow = $('<tr class="firstRow"></tr>').append('<td></td>');
+      var _iteratorNormalCompletion5 = true;
+      var _didIteratorError5 = false;
+      var _iteratorError5 = undefined;
+
+      try {
+        for (var _iterator5 = data[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+          var slot = _step5.value;
+          $firstRow.append($("<td>".concat(slot.date, "</td>")));
+        }
+      } catch (err) {
+        _didIteratorError5 = true;
+        _iteratorError5 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion5 && _iterator5.return != null) {
+            _iterator5.return();
+          }
+        } finally {
+          if (_didIteratorError5) {
+            throw _iteratorError5;
+          }
+        }
+      }
+
       $firstRow.find('td').addClass('unselectable');
       $presenterTable.append($firstRow);
 
       for (var i = 16; i < 41; i++) {
         var $row = $('<tr></tr>');
         $row.append("<td class=\"unselectable\">".concat(i % 2 === 0 ? parseInt(i / 2) : '', "</td>"));
-        var _iteratorNormalCompletion5 = true;
-        var _didIteratorError5 = false;
-        var _iteratorError5 = undefined;
+        var _iteratorNormalCompletion6 = true;
+        var _didIteratorError6 = false;
+        var _iteratorError6 = undefined;
 
         try {
-          for (var _iterator5 = data[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-            var item = _step5.value;
-            var clr = parseInt(item.scoreList[i] * 255);
-            var $td = $("<td style=\"background-color: rgb(".concat(clr, ",").concat(clr, ",").concat(clr, ")\"></td>"));
+          for (var _iterator6 = data[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+            var item = _step6.value;
+            var clr = item.scoreList[i] / maxV;
+            var $td = $("<td style=\"background-color: ".concat(d3.interpolateBlues(clr), "\"></td>"));
             $row.append($td);
           }
         } catch (err) {
-          _didIteratorError5 = true;
-          _iteratorError5 = err;
+          _didIteratorError6 = true;
+          _iteratorError6 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion5 && _iterator5.return != null) {
-              _iterator5.return();
+            if (!_iteratorNormalCompletion6 && _iterator6.return != null) {
+              _iterator6.return();
             }
           } finally {
-            if (_didIteratorError5) {
-              throw _iteratorError5;
+            if (_didIteratorError6) {
+              throw _iteratorError6;
             }
           }
         }
@@ -287,4 +313,131 @@ function () {
   }]);
 
   return TimeSlotWidget;
+}();
+
+var TimeSlotSelector =
+/*#__PURE__*/
+function () {
+  function TimeSlotSelector($container) {
+    _classCallCheck(this, TimeSlotSelector);
+
+    this.$container = $container;
+    this.$container.attr('id', 'widget-container');
+    this.$presenterContainer = $('<div id="presenter-container"></div>');
+    this.$container.append(this.$presenterContainer);
+    this.dateTime = "";
+  }
+
+  _createClass(TimeSlotSelector, [{
+    key: "renderPresenter",
+    value: function renderPresenter(data) {
+      var _this2 = this;
+
+      this.$presenterContainer.empty();
+      var $presenterTable = $('<table id="presenter-table"></table>');
+      this.$presenterContainer.append($presenterTable); // Find maximum value
+
+      var maxV = 0;
+      var _iteratorNormalCompletion7 = true;
+      var _didIteratorError7 = false;
+      var _iteratorError7 = undefined;
+
+      try {
+        for (var _iterator7 = data[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+          var _item2 = _step7.value;
+          maxV = Math.max(maxV, _.max(_item2.scoreList));
+        } // Paint table
+
+      } catch (err) {
+        _didIteratorError7 = true;
+        _iteratorError7 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion7 && _iterator7.return != null) {
+            _iterator7.return();
+          }
+        } finally {
+          if (_didIteratorError7) {
+            throw _iteratorError7;
+          }
+        }
+      }
+
+      var $firstRow = $('<tr class="firstRow"></tr>').append('<td></td>');
+      var _iteratorNormalCompletion8 = true;
+      var _didIteratorError8 = false;
+      var _iteratorError8 = undefined;
+
+      try {
+        for (var _iterator8 = data[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+          var slot = _step8.value;
+          $firstRow.append($("<td>".concat(slot.date, "</td>")));
+        }
+      } catch (err) {
+        _didIteratorError8 = true;
+        _iteratorError8 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion8 && _iterator8.return != null) {
+            _iterator8.return();
+          }
+        } finally {
+          if (_didIteratorError8) {
+            throw _iteratorError8;
+          }
+        }
+      }
+
+      $firstRow.find('td').addClass('unselectable');
+      $presenterTable.append($firstRow);
+
+      for (var i = 16; i < 41; i++) {
+        var $row = $('<tr></tr>');
+        $row.append("<td class=\"unselectable\">".concat(i % 2 === 0 ? parseInt(i / 2) : '', "</td>"));
+        var _iteratorNormalCompletion9 = true;
+        var _didIteratorError9 = false;
+        var _iteratorError9 = undefined;
+
+        try {
+          for (var _iterator9 = data[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+            var item = _step9.value;
+            var clr = item.scoreList[i] / maxV;
+            var time = i % 2 === 0 ? "".concat(parseInt(i / 2), ":00") : "".concat(parseInt(i / 2), ":30");
+            var $td = $("<td style=\"background-color: ".concat(d3.interpolateBlues(clr), "\" data-datetime=\"").concat(item.date, " ").concat(time, "\"></td>"));
+            $td.addClass('tooltipped').attr('data-position', 'top').attr('data-tooltip', "".concat(item.date, " ").concat(time));
+            $row.append($td);
+            $td.click(function (e) {
+              var $ele = $(e.target);
+              _this2.dateTime = $ele.attr('data-datetime');
+              $('td').removeClass('selected');
+              $ele.addClass('selected');
+            });
+          }
+        } catch (err) {
+          _didIteratorError9 = true;
+          _iteratorError9 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion9 && _iterator9.return != null) {
+              _iterator9.return();
+            }
+          } finally {
+            if (_didIteratorError9) {
+              throw _iteratorError9;
+            }
+          }
+        }
+
+        $presenterTable.append($row);
+      }
+
+      $('.tooltipped').tooltip({
+        enterDelay: 50,
+        inDuration: 100,
+        outDuration: 100
+      });
+    }
+  }]);
+
+  return TimeSlotSelector;
 }();

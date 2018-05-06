@@ -10,3 +10,11 @@
   height: 100%;
   text: #212121;
   background-clip: content-box; }
+
+#widget-container #presenter-container {
+  width: 85% !important; }
+  #widget-container #presenter-container td:not(.unselectable) {
+    cursor: pointer; }
+  #widget-container #presenter-container td.selected {
+    border: 2px solid #4CAF50;
+    transition: border 0.5s !important; }

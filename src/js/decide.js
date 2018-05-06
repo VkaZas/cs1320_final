@@ -1,4 +1,5 @@
 let CollapsibleInstance;
+let selectorWidget;
 $(document).ready(function(){
     M.AutoInit();
     let elem = document.querySelector('.collapsible');
@@ -8,6 +9,8 @@ $(document).ready(function(){
     $.post(`/attend/${eventID}`, {id: eventID}, (data) => {
 
         console.log(data);
+        // time initialization
+        initTime(data);
         // location initialization
         initLoc(data);
         // email initialization
@@ -15,6 +18,22 @@ $(document).ready(function(){
     });
 
 });
+
+function initTime(data) {
+    const presenterData = data.presenterData;
+    const tmp = [];
+    for (let item of presenterData) {
+        const arr = item.slot_score_list.split(',');
+        tmp.push({
+            date: item.date,
+            scoreList: arr.map(e => parseInt(e) / 5.0)
+        })
+    }
+    selectorWidget = new TimeSlotSelector($('#time-content'));
+    selectorWidget.renderPresenter(tmp, (str) => {
+
+    });
+}
 
 function initLoc(data){
     let sample_locations = [["CIT", 4], ["SCILab", 8], ["Main Green", 5]];
@@ -26,7 +45,8 @@ function initLoc(data){
         num_attendents = num_attendents.split(',').length;
     }
     let location_data = [];//data.pickerData.locations_votes;
-    if (data.pickerData.locations_votes == null){
+    console.log(data.pickerData.location_votes);
+    if (data.pickerData.location_votes == null){
         for (let loc of locations){
             location_data.push({
                 location: loc,
@@ -36,6 +56,7 @@ function initLoc(data){
         }
     } else {
         let location_votes = data.pickerData.location_votes.split(',');
+
         for (let i = 0; i < locations.length; i++){
             let vote = parseInt(location_votes[i]);
             location_data.push({

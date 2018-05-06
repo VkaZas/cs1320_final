@@ -2,9 +2,10 @@
 
 var pickerData = [];
 var presenterData = [];
-var $btnSubmit;
 $(function () {
-  $btnSubmit = $('#btn-submit');
+  var $btnSubmit = $('#btn-submit');
+  var $locationForm = $('#location').find('form');
+  var $checkBoxes;
   var eventID = document.querySelector('meta[name=eventID]').content;
   $.post("/attend/".concat(eventID), {
     id: eventID
@@ -41,7 +42,7 @@ $(function () {
         tmp.push({
           date: item.date,
           scoreList: arr.map(function (e) {
-            return parseInt(e) / 20.0;
+            return parseInt(e) / 5.0;
           })
         });
       }
@@ -60,9 +61,16 @@ $(function () {
       }
     }
 
-    console.log(tmp);
-    widget.renderPresenter(tmp);
-  }); // // Sample data
+    widget.renderPresenter(tmp); // Render location
+
+    var locations = data.pickerData.locations.split(',');
+
+    for (var _i = 0; _i < locations.length; _i++) {
+      $locationForm.append('<p>' + "<input type=\"checkbox\" id=\"location-".concat(_i, "\"/>") + "<label for=\"location-".concat(_i, "\">").concat(locations[_i], "</label>") + '</p>');
+    }
+
+    $checkBoxes = $('input[type="checkbox"]');
+  }); // Sample data
   // $.post('/event/createEvent', {
   //     "event_name": "test_event",
   //     "creator_mail": "test@gmail.com",
@@ -110,10 +118,27 @@ $(function () {
   var widget = new TimeSlotWidget($('#widget-container')); // widget.renderPresenter(presenterData);
 
   window.widget = widget;
-  console.log($btnSubmit);
   $btnSubmit.click(function () {
     console.log('clicked!');
+    var name = $('#name-input').val();
+
+    if (!name) {
+      alert('Please input your name');
+      return;
+    }
+
+    var locationVoteB = 0;
+
+    for (var i = 0; i < $checkBoxes.length; i++) {
+      if ($("#location-".concat(i)).prop('checked') === true) {
+        locationVoteB |= 1 << i;
+      }
+    }
+
     $.post("/attend/updatetimeslots/".concat(eventID), {
+      locationVote: locationVoteB,
+      attendeeName: name,
+      attendeeEmail: $('#email-input').val(),
       pickerData: JSON.stringify(widget.getPickerData()),
       test: 1
     }, function (res) {
@@ -131,7 +156,7 @@ $(function () {
           tmp.push({
             date: item.date,
             scoreList: arr.map(function (e) {
-              return parseInt(e) / 20.0;
+              return parseInt(e) / 5.0;
             })
           });
         }

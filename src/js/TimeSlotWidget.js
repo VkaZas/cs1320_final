@@ -156,6 +156,11 @@ class TimeSlotWidget {
         const $presenterTable = $('<table id="presenter-table"></table>');
         this.$presenterContainer.append($presenterTable);
 
+        // Find maximum value
+        let maxV = 0;
+        for (let item of data)
+            maxV = Math.max(maxV, _.max(item.scoreList));
+
         // Paint table
         const $firstRow = $('<tr class="firstRow"></tr>').append('<td></td>');
         for (let slot of data) {
@@ -168,12 +173,68 @@ class TimeSlotWidget {
             const $row = $('<tr></tr>');
             $row.append(`<td class="unselectable">${(i % 2 === 0 ? parseInt(i / 2) : '')}</td>`);
             for (let item of data) {
-                const clr = parseInt(item.scoreList[i]*255);
-                const $td = $(`<td style="background-color: rgb(${clr},${clr},${clr})"></td>`);
+                const clr = item.scoreList[i] / maxV;
+                const $td = $(`<td style="background-color: ${d3.interpolateBlues(clr)}"></td>`);
                 $row.append($td);
             }
             $presenterTable.append($row);
         }
 
+    }
+}
+
+class TimeSlotSelector {
+    constructor($container) {
+        this.$container = $container;
+        this.$container.attr('id', 'widget-container');
+        this.$presenterContainer = $('<div id="presenter-container"></div>');
+        this.$container.append(this.$presenterContainer);
+        this.dateTime = "";
+    }
+
+    renderPresenter(data) {
+        this.$presenterContainer.empty();
+        const $presenterTable = $('<table id="presenter-table"></table>');
+        this.$presenterContainer.append($presenterTable);
+
+        // Find maximum value
+        let maxV = 0;
+        for (let item of data)
+            maxV = Math.max(maxV, _.max(item.scoreList));
+
+        // Paint table
+        const $firstRow = $('<tr class="firstRow"></tr>').append('<td></td>');
+        for (let slot of data) {
+            $firstRow.append($(`<td>${slot.date}</td>`));
+        }
+        $firstRow.find('td').addClass('unselectable');
+        $presenterTable.append($firstRow);
+
+        for (let i = 16; i < 41; i++) {
+            const $row = $('<tr></tr>');
+            $row.append(`<td class="unselectable">${(i % 2 === 0 ? parseInt(i / 2) : '')}</td>`);
+            for (let item of data) {
+                const clr = item.scoreList[i] / maxV;
+                const time = i % 2 === 0 ? `${parseInt(i / 2)}:00` : `${parseInt(i / 2)}:30`;
+                const $td = $(`<td style="background-color: ${d3.interpolateBlues(clr)}" data-datetime="${item.date} ${time}"></td>`);
+                $td.addClass('tooltipped')
+                    .attr('data-position', 'top')
+                    .attr('data-tooltip', `${item.date} ${time}`);
+                $row.append($td);
+                $td.click((e) => {
+                    const $ele = $(e.target);
+                    this.dateTime = $ele.attr('data-datetime');
+                    $('td').removeClass('selected');
+                    $ele.addClass('selected');
+                })
+            }
+            $presenterTable.append($row);
+        }
+
+        $('.tooltipped').tooltip({
+            enterDelay: 50,
+            inDuration: 100,
+            outDuration: 100,
+        });
     }
 }

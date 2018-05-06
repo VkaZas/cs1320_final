@@ -7,6 +7,7 @@ const colors = require('colors');
 const babel = require('@babel/core');
 const index = require('./routes/index'); 
 const uuidv4 = require('uuid/v4');
+const _ = require('lodash');
 var buildUrl = require('build-url');
 var nodemailer = require('nodemailer');
 var calendar = require('calendar-js');
@@ -46,10 +47,20 @@ connEvents.query(events, function(err, data) {});
 
 var timeSlots = "CREATE TABLE time_slots (\
   event_id TEXT, \
+  attendee_name TEXT,\
   date DATE, \
-  slot_score_list TEXT \
+  slot_score_list TEXT, \
+  PRIMARY KEY(event_id, attendee_name, date) \
 )";
 connEvents.query(timeSlots, function(err, data) {});
+
+const locationVote = "CREATE TABLE loc_vote (\
+  event_id TEXT, \
+  attendee_name TEXT,\
+  vote TEXT, \
+  PRIMARY KEY(event_id, attendee_name) \
+)";
+connEvents.query(locationVote, function(err, data) {});
 
 //Email setup
 var transporter = nodemailer.createTransport({
@@ -92,10 +103,10 @@ app.post('/event/createEvent', function(request, response) {
   var end_date = request.body.end_date;
   var end_time_list = request.body.end_time_list;
   var locations = request.body.locations;
-  var location_votes = ""
+  var location_votes = "";
   var split_locs = locations.split(',');
   var split_len = split_locs.length;
-  for (s in split_locs) {
+  for (let s in split_locs) {
     if ((parseInt(s) + 1) == split_len) {
       location_votes += "0";
     } else {
@@ -163,68 +174,128 @@ app.get('/attend/:id', function(request, response) {
 
 //get the information for a particular event and send it to the client 
 app.post('/attend/:id', function(request, response) {
-  var id = request.params.id;
-    var eventQuery = "SELECT * FROM events WHERE id = ?";
-  connEvents.query(eventQuery, id, function(err, data1) {
-    if (err) {
-      console.log(err);
-    } else {
-      const slotQuery = "SELECT date, slot_score_list FROM time_slots WHERE event_id = ?";
-      connEvents.query(slotQuery, id, (err, data2) => {
-          if (err) {
-            console.log(err.red);
-          } else {
-              response.json({
-                  pickerData: data1.rows[0],
-                  presenterData: data2.rows
-              });
+  const id = request.params.id;
+
+  // Update events(location_votes first)
+  const sql = "SELECT vote FROM loc_vote WHERE event_id = $1";
+  connEvents.query(sql, [id], (err, data) => {
+      if (err) {
+          console.log(err.red);
+      } else {
+          const voteArr = [0, 0, 0];
+          for (let row of data.rows) {
+              let voteB = parseInt(row.vote);
+              for (let i = 0; i < 3; i++) {
+                  if (((voteB >> i) & 1) === 1)
+                      voteArr[i]++;
+              }
           }
-      });
-    }
-  })
+
+          const sql = "UPDATE events SET location_votes = $1 WHERE id = $2";
+          connEvents.query(sql, [voteArr.join(','), id], (err, data) => {
+              if (err) {
+                  console.log(err.red);
+              } else {
+                  // Response with data
+                  const eventQuery = "SELECT * FROM events WHERE id = ?";
+                  connEvents.query(eventQuery, id, function(err, data1) {
+                      if (err) {
+                          console.log(err);
+                      } else {
+                          const slotQuery = "SELECT date, slot_score_list FROM time_slots WHERE event_id = ?";
+                          connEvents.query(slotQuery, id, (err, data2) => {
+                              if (err) {
+                                  console.log(err.red);
+                              } else {
+                                  let tmpDic = {};
+                                  for (let row of data2.rows) {
+                                      let tmpSlotList = row.slot_score_list.split(',').map(e => parseInt(e));
+                                      if (tmpDic.hasOwnProperty(row.date)) {
+                                          for (let i = 0; i < tmpDic[row.date].length; i++)
+                                              tmpDic[row.date][i] += tmpSlotList[i];
+                                      } else {
+                                          tmpDic[row.date] = tmpSlotList;
+                                      }
+                                  }
+                                  let arr = [];
+                                  for (let k of Object.keys(tmpDic))
+                                      arr.push({
+                                          date: k,
+                                          slot_score_list: tmpDic[k].join(','),
+                                      })
+                                  response.json({
+                                      pickerData: data1.rows[0],
+                                      presenterData: arr,
+                                  });
+                              }
+                          });
+                      }
+                  });
+              }
+          });
+      }
+  });
 });
 
 //update the db with the times/locations that user inputs
 app.post('/attend/updatetimeslots/:id', (req, res) => {
     const id = req.params.id;
-    const pickerData = JSON.parse(req.body.pickerData);
-    var location = "";
-    if (req.body.location) {
-      location = req.body.location;
+    const attendeeName = req.body.attendeeName;
+    const attendeeEmail = !!req.body.attendeeEmail ? req.body.attendeeEmail : "";
+    let sql;
+    if (!attendeeName) {
+        console.log('[updateTimeSlots] No attendeeName!'.red)
     }
-    const sql = "SELECT date, slot_score_list FROM time_slots WHERE event_id = ?";
-    connEvents.query(sql, id, (err, data) => {
+    const pickerData = JSON.parse(req.body.pickerData);
+    const locationVoteB = req.body.locationVote.toString();
+
+    // Update events(attendee_names, attendee_emails)
+    sql = "SELECT attendee_names, attendee_emails FROM events WHERE id = $1";
+    connEvents.query(sql, [id], (err, data) => {
+        if (err) {
+            console.log(err.red);
+        } else {
+            const nameArr = !!data.rows[0].attendee_names ? data.rows[0].attendee_names.split(',') : [];
+            const emailArr = !!data.rows[0].attendee_emails ? data.rows[0].attendee_emails.split(',') : [];
+            let idx;
+            if ((idx = _.indexOf(nameArr, attendeeName)) === -1) {
+                // New attendee
+                nameArr.push(attendeeName);
+                emailArr.push(attendeeEmail);
+            } else {
+                emailArr[idx] = attendeeEmail;
+            }
+
+            const sql = "UPDATE events SET attendee_names = $1, attendee_emails = $2 WHERE id = $3";
+            connEvents.query(sql, [nameArr.join(), emailArr.join(), id], (err, data) => {
+                if (err) {
+                    console.log(err.red);
+                } else {
+
+                }
+            });
+        }
+    });
+
+    // Update time_slot
+    sql = "SELECT date, slot_score_list FROM time_slots WHERE event_id = $1 and attendee_name = $2";
+    connEvents.query(sql, [id, attendeeName], (err, data) => {
         if (err) {
             console.log(err.red);
         } else {
             if (data.rows.length === 0) {
                 for (let item of pickerData) {
-                    const sql = "INSERT INTO time_slots(event_id, date, slot_score_list) VALUES($1,$2,$3)";
-                    connEvents.query(sql, [id, item.date, item.slotScoreList.join()], (err, data) => {
+                    const sql = "INSERT INTO time_slots(event_id, date, slot_score_list, attendee_name) VALUES($1,$2,$3,$4)";
+                    connEvents.query(sql, [id, item.date, item.slotScoreList.join(), attendeeName], (err, data) => {
                         if (err) {
                             console.log(err.red);
                         }
                     });
                 }
             } else {
-                for (let row of data.rows) {
-                    let tmp = [0,0,0,0,0,0,0,0,
-                              0,0,0,0,0,0,0,0,
-                              0,0,0,0,0,0,0,0,
-                              0,0,0,0,0,0,0,0,
-                              0,0,0,0,0,0,0,0,
-                              0,0,0,0,0,0,0,0];
-                    let arr = !!row.slot_score_list ? row.slot_score_list.split(',') : tmp;
-                    for (let item of pickerData) {
-                        if (item.date == row.date) {
-                            for (let i = 0; i < 48; i++) {
-                                arr[i] = parseInt(arr[i]) + parseInt(item.slotScoreList[i]);
-                            }
-                            break;
-                        }
-                    }
-                    const sql = "UPDATE time_slots SET slot_score_list = $1 WHERE date = $2 and event_id = $3";
-                    connEvents.query(sql, [arr.join(), row.date, id], (err, data) => {
+                for (let item of pickerData) {
+                    const sql = "UPDATE time_slots SET slot_score_list = $1 WHERE date = $2 and event_id = $3 and attendee_name = $4";
+                    connEvents.query(sql, [item.slotScoreList.join(), item.date, id, attendeeName], (err, data) => {
                         if (err) {
                             console.log(err.red);
                         }
@@ -232,62 +303,106 @@ app.post('/attend/updatetimeslots/:id', (req, res) => {
                 }
             }
 
+            // Update loc_vote
+            const sql = "SELECT vote FROM loc_vote WHERE event_id = $1 and attendee_name = $2";
+            connEvents.query(sql, [id, attendeeName], (err, data) => {
+                if (err) {
+                    console.log(err.red);
+                } else {
+                    if (data.rows.length === 0) {
+                        const sql = "INSERT INTO loc_vote(attendee_name, event_id, vote) VALUES($1,$2,$3)";
+                        connEvents.query(sql, [attendeeName, id, locationVoteB], (err, data) => {
+                            if (err) {
+                                console.log(err.red);
+                            }
+                        });
+
+                    } else {
+                        const sql = "UPDATE loc_vote SET vote = $1 WHERE event_id = $2 and attendee_name = $3";
+                        connEvents.query(sql, [locationVoteB, id, attendeeName], (err, data) => {
+                            if (err) {
+                                console.log(err.red);
+                            }
+                        });
+                    }
+                }
+            });
+
+            // Response with updated data
             const slotQuery = "SELECT date, slot_score_list FROM time_slots WHERE event_id = ?";
             connEvents.query(slotQuery, id, (err, data2) => {
                 if (err) {
                     console.log(err.red);
                 } else {
-                    if (location) {
-                      const locationQuery = "SELECT location_votes, locations FROM events WHERE id = ?";
-                      console.log("setup done");
-                      connEvents.query(locationQuery, id, function(err, locData) {
-                        //this query doesn't happen - why?
-                        console.log("query happens");
-                        if (err) {
-                          console.log(err.red);
+                    let tmpDic = {};
+                    for (let row of data2.rows) {
+                        let tmpSlotList = row.slot_score_list.split(',').map(e => parseInt(e));
+                        if (tmpDic.hasOwnProperty(row.date)) {
+                            for (let i = 0; i < tmpDic[row.date].length; i++)
+                                tmpDic[row.date][i] += tmpSlotList[i];
                         } else {
-                          console.log(locData);
-                          // var locs = (data.rows[0].locations).split(',');
-                          // var locVotes = (data.rows[0].location_votes).split(',');
-                          // var currVotes = -1;
-                          // for (l in locs) {
-                          //   if (locs[l] == location) {
-                          //     currVote = parseInt(locVotes[l]) + 1;
-                          //     break;
-                          //   }
-                          // }
-                          // var newVotes = "";
-                          // var locVotesLen = locVotes.length;
-                          // for (l in locVotes) {
-                          //   if (locs[l] == location) {
-                          //     newVotes += currVote.toString();
-                          //   } else {
-                          //     newVotes += locVotes[l];
-                          //   }
-                          //   if (!(l+1 == locVotesLen)) {
-                          //     newVotes += ",";
-                          //   }
-                          // }
-                          // const insertLocQuery = "UPDATE events \
-                          //                         SET location_votes = $1 \
-                          //                         WHERE id = $2";
-                          // connEvents.query(insertLocQuery, [newVotes, id], (err, data) => {
-                          //   if (err) {
-                          //     console.log(err);
-                          //   } else {
-                          //     console.log("inserted");
-                          //   }
-                          // });
+                            tmpDic[row.date] = tmpSlotList;
                         }
-                      });
                     }
+                    let arr = [];
+                    for (let k of Object.keys(tmpDic))
+                        arr.push({
+                            date: k,
+                            slot_score_list: tmpDic[k].join(','),
+                        });
                     res.json({
-                        presenterData: data2.rows
+                        presenterData: arr
                     });
+                    // if (location) {
+                    //   const locationQuery = "SELECT location_votes, locations FROM events WHERE id = ?";
+                    //   console.log("setup done");
+                    //   connEvents.query(locationQuery, id, function(err, locData) {
+                    //     //this query doesn't happen - why?
+                    //     console.log("query happens");
+                    //     if (err) {
+                    //       console.log(err.red);
+                    //     } else {
+                    //       console.log(locData);
+                    //       var locs = (data.rows[0].locations).split(',');
+                    //       var locVotes = (data.rows[0].location_votes).split(',');
+                    //       var currVotes = -1;
+                    //       for (l in locs) {
+                    //         if (locs[l] == location) {
+                    //           currVote = parseInt(locVotes[l]) + 1;
+                    //           break;
+                    //         }
+                    //       }
+                    //       var newVotes = "";
+                    //       var locVotesLen = locVotes.length;
+                    //       for (l in locVotes) {
+                    //         if (locs[l] == location) {
+                    //           newVotes += currVote.toString();
+                    //         } else {
+                    //           newVotes += locVotes[l];
+                    //         }
+                    //         if (!(l+1 == locVotesLen)) {
+                    //           newVotes += ",";
+                    //         }
+                    //       }
+                    //       const insertLocQuery = "UPDATE events \
+                    //                               SET location_votes = $1 \
+                    //                               WHERE id = $2";
+                    //       connEvents.query(insertLocQuery, [newVotes, id], (err, data) => {
+                    //         if (err) {
+                    //           console.log(err);
+                    //         } else {
+                    //           console.log("inserted");
+                    //         }
+                    //       });
+                    //     }
+                    //   });
+                    // }
+
                 }
             });
         }
     });
+
 });
 
 //return the pug files for the decide page
