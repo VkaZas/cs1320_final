@@ -68,7 +68,6 @@ app.get('/event/create', function(request, response) {
   var year = date.getFullYear();
   var month = date.getMonth();
   var calArray = calendar().of(year, month).calendar;
-  console.log(calArray);
   a = {month: calendar().of(year, month).month}
   for(var i=0; i< calArray.length; i++){
     for(var j = 0; j<calArray[0].length; j++){
@@ -78,7 +77,6 @@ app.get('/event/create', function(request, response) {
         a["a"+(i*7+j)] = '';
     }
   }
-  console.log(a)
 	response.render('index', a);
   
 });
