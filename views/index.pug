@@ -15,6 +15,7 @@ block body-content
     br
     input(type='text' name='creator_email' class="formelement" placeholder="Place your email Here")
     table(style="width:10%")
+        th= month
         tr
             th Su
             th Mo
@@ -24,54 +25,57 @@ block body-content
             th Fr
             th Sa
         tr 
-            td(id = "b0")= a0
-            td(id = 1)= a1
-            td(id = 2)= a2
-            td(id = 3)= a3
-            td(id = 4)= a4
-            td(id = 5)= a5
-            td(id = 6)= a6
+            td(id = "a0" onclick="selectDate(this.id)")= a0
+            td(id = "a1" onclick="selectDate(this.id)")= a1
+            td(id = "a2" onclick="selectDate(this.id)")= a2
+            td(id = "a3" onclick="selectDate(this.id)")= a3
+            td(id = "a4" onclick="selectDate(this.id)")= a4
+            td(id = "a5" onclick="selectDate(this.id)")= a5
+            td(id = "a6" onclick="selectDate(this.id)")= a6
         tr
-            td(id = 7)= a7
-            td(id = 8)= a8
-            td(id = 9)= a9
-            td(id = 10)= a10
-            td(id = 11)= a11
-            td(id = 12)= a12
-            td(id = 13)= a13
+            td(id = "a7" onclick="selectDate(this.id)")= a7
+            td(id = "a8" onclick="selectDate(this.id)")= a8
+            td(id = "a9" onclick="selectDate(this.id)")= a9
+            td(id = "a10" onclick="selectDate(this.id)")= a10
+            td(id = "a11" onclick="selectDate(this.id)")= a11
+            td(id = "a12" onclick="selectDate(this.id)")= a12
+            td(id = "a13" onclick="selectDate(this.id)")= a13
         tr
-            td(id = 14)= a14
-            td(id = 15)= a15
-            td(id = 16)= a16
-            td(id = 17)= a17
-            td(id = 18)= a18
-            td(id = 19)= a19
-            td(id = 20)= a20
+            td(id = "a14" onclick="selectDate(this.id)")= a14
+            td(id = "a15" onclick="selectDate(this.id)")= a15
+            td(id = "a16" onclick="selectDate(this.id)")= a16
+            td(id = "a17" onclick="selectDate(this.id)")= a17
+            td(id = "a18" onclick="selectDate(this.id)")= a18
+            td(id = "a19" onclick="selectDate(this.id)")= a19
+            td(id = "a20" onclick="selectDate(this.id)")= a20
         tr
-            td(id = 21)= a21
-            td(id = 22)= a22
-            td(id = 23)= a23
-            td(id = 24)= a24
-            td(id = 25)= a25
-            td(id = 26)= a26
-            td(id = 27)= a27
+            td(id = "a21" onclick="selectDate(this.id)")= a21
+            td(id = "a22" onclick="selectDate(this.id)")= a22
+            td(id = "a23" onclick="selectDate(this.id)")= a23
+            td(id = "a24" onclick="selectDate(this.id)")= a24
+            td(id = "a25" onclick="selectDate(this.id)")= a25
+            td(id = "a26" onclick="selectDate(this.id)")= a26
+            td(id = "a27" onclick="selectDate(this.id)")= a27
         tr
-            td(id = 28)= a28
-            td(id = 29)= a29
-            td(id = 30)= a30
-            td(id = 31)= a31
-            td(id = 32)= a32
-            td(id = 33)= a33
-            td(id = 34)= a34
+            td(id = "a28" onclick="selectDate(this.id)")= a28
+            td(id = "a29" onclick="selectDate(this.id)")= a29
+            td(id = "a30" onclick="selectDate(this.id)")= a30
+            td(id = "a31" onclick="selectDate(this.id)")= a31
+            td(id = "a32" onclick="selectDate(this.id)")= a32
+            td(id = "a33" onclick="selectDate(this.id)")= a33
+            td(id = "a34" onclick="selectDate(this.id)")= a34
         tr
-            td(id = 35)= a35
-            td(id = 36)= a36
-            td(id = 37)= a37
-            td(id = 38)= a38
-            td(id = 39)= a39
-            td(id = 40)= a40
-            td(id = 41)= a41
+            td(id = "a35" onclick="selectDate(this.id)")= a35
+            td(id = "a36" onclick="selectDate(this.id)")= a36
+            td(id = "a37" onclick="selectDate(this.id)")= a37
+            td(id = "a38" onclick="selectDate(this.id)")= a38
+            td(id = "a39" onclick="selectDate(this.id)")= a39
+            td(id = "a40" onclick="selectDate(this.id)")= a40
+            td(id = "a41" onclick="selectDate(this.id)")= a41
     label(class="switch")
         input(type="checkbox")
         span(class="slider round")
     #widget-container
+    script
+        function selectDate(id)
+           document.getElementById(id).style.color = "red";

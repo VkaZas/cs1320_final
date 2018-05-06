@@ -10,9 +10,29 @@
   width: 100%;
   height: 100%; }
 
-td#b0 {
+td {
     border-radius: 5px;
-    background-color: #369;
-    color: white;
-    border: 5px solid white;
+    height: 5px;
+    font-size: smaller;
+    color: #9e9e9e;
+}
+
+tr{
+	height: 5px;
+}
+
+table{
+	margin-left: 40px;
+	border: 1px solid #9e9e9e;
+	border-radius: 5px;
+}
+
+input.formelement{
+	margin-top: 20px;
+	width: 200px;
+	margin-left: 40px;
+}
+
+td:hover{
+	background-color: #2DC7FF;
 }

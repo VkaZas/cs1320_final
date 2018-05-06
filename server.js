@@ -10,7 +10,6 @@ const uuidv4 = require('uuid/v4');
 var buildUrl = require('build-url');
 var nodemailer = require('nodemailer');
 var calendar = require('calendar-js');
-var cron = require('node-schedule');
 
 // View engine
 app.set('views', path.join(__dirname, 'views'));
