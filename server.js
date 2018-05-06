@@ -102,7 +102,6 @@ app.post('/event/createEvent', function(request, response) {
       location_votes += "0,";
     } 
   }
-  console.log(location_votes);
   var createNewEvent = "INSERT INTO events \
                       (id, name, \
                         creator_email, \
@@ -197,6 +196,7 @@ app.post('/attend/updatetimeslots/:id', (req, res) => {
         if (err) {
             console.log(err.red);
         } else {
+            //no time slots entered yet
             if (data.rows.length === 0) {
                 for (let item of pickerData) {
                     const sql = "INSERT INTO time_slots(event_id, date, slot_score_list) VALUES($1,$2,$3)";
@@ -207,6 +207,7 @@ app.post('/attend/updatetimeslots/:id', (req, res) => {
                     });
                 }
             } else {
+                //time slots already entered before
                 for (let row of data.rows) {
                     let tmp = [0,0,0,0,0,0,0,0,
                               0,0,0,0,0,0,0,0,
@@ -237,6 +238,7 @@ app.post('/attend/updatetimeslots/:id', (req, res) => {
                 if (err) {
                     console.log(err.red);
                 } else {
+                    //do location vote updates if location voted on
                     if (location) {
                       const locationQuery = "SELECT location_votes, locations FROM events WHERE id = ?";
                       console.log("setup done");
@@ -296,7 +298,7 @@ app.get('/event/:id/decide', (request, response) => {
     response.render('decide', {id: id});
 });
 
-//schedule email
+//schedule reminder emails and update event with final decision
 app.post('/event/:id/decide', (req, res) => {
   const id = req.params.id;
   const decided_time_start = req.body.decided_time_start;
@@ -331,6 +333,7 @@ app.post('/event/:id/decide', (req, res) => {
   }
   var attendee_emails = req.body.attendee_emails;
   attendee_emails = attendee_emails.split(',');
+  //update db with final decision 
   const decisionQuery = "UPDATE events \
                         SET decided_start_time = $1, decided_end_time = $2, \
                         decided_date = $3, decided_location = $4 \
@@ -358,6 +361,7 @@ app.post('/event/:id/decide', (req, res) => {
                                   parseInt(split_date[2]),
                                   0,
                                   0);
+          //schedule email for every attendee that opted in for reminder
           cron.scheduleJob(emailReminderDate, function() {
             for (e in attendee_emails) {
               var email = attendee_emails[e];
@@ -393,6 +397,8 @@ app.get("*", (req, res) => {
 })
 
 //Helper Functions
+
+//validate time input
 function validateTime(time, valid) {
   var time_check = time.split(":");
   var t0 = parseInt(time_check[0]);
@@ -403,6 +409,7 @@ function validateTime(time, valid) {
   }
 }
 
+//validate date input
 function validateDate(date, valid) {
   var date_check = Date.parse(date);
   if (isNaN(date_check)) {
