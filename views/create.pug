@@ -1,1 +1,44 @@
 extends _base
+
+block links
+    link(rel='stylesheet', href='/css/create.css')
+    link(rel='stylesheet', href='http://materializecss.com/css/ghpages-materialize.css')
+    link(rel='stylesheet', href='/css/TimeSlotWidget.css')
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js")
+    script(src='/js/create.js')
+    script(src='/js/TimeSlotWidget.js')
+
+block body-content
+    .container
+        .row.card#form-card
+            form.col.l12
+                .row
+                    .input-field.col.l12
+                        input#name-input(type='text')
+                        label(for='name-input') Event Name
+                .row
+                    .input-field.col.l12
+                        input#email-input(type='email')
+                        label(for='email-input') Email
+                .row
+                    .input-field.col.l4
+                        input#location-input-1.location-input(type='text')
+                        label(for='location-input-1') Location 1
+                    .input-field.col.l4
+                        input#location-input-2.location-input(type='text')
+                        label(for='location-input-2') Location 2
+                    .input-field.col.l4
+                        input#location-input-3.location-input(type='text')
+                        label(for='location-input-3') Location 3
+                .row
+                    .input-field.col.l6
+                        input#start-date-input.datepicker(type='text', placeholder='Click to select')
+                        label(for='start-date-input') Start Date
+                    .input-field.col.l6
+                        input#end-date-input.datepicker(type='text', placeholder='Click to select')
+                        label(for='end-date-input') End Date
+                .row
+                    #range-picker-container
+                .row
+                    a.btn.waves-effect.waves-light#btn-submit Submit
+                        i.material-icons.right

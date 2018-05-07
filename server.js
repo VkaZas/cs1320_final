@@ -88,7 +88,7 @@ app.get('/event/create', function(request, response) {
         a["a"+(i*7+j)] = '';
     }
   }
-	response.render('index', a);
+	response.render('create', a);
   
 });
 

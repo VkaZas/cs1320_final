@@ -191,7 +191,7 @@ function () {
             var $ele = $(colGrid[_i2 - 16]);
 
             if ($ele.hasClass('selected')) {
-              if ($ele.hasClass('priority-1')) arr[_i2] = 3;else if ($ele.hasClass('priority-2')) arr[_i2] = 2;else if ($ele.hasClass('priority-3')) arr[_i2] = 1;
+              if ($ele.hasClass('priority-1')) arr[_i2 - 1] = 3;else if ($ele.hasClass('priority-2')) arr[_i2 - 1] = 2;else if ($ele.hasClass('priority-3')) arr[_i2 - 1] = 1;
             }
           }
 
@@ -440,4 +440,207 @@ function () {
   }]);
 
   return TimeSlotSelector;
+}();
+
+var TimeRangeSelector =
+/*#__PURE__*/
+function () {
+  function TimeRangeSelector($container) {
+    _classCallCheck(this, TimeRangeSelector);
+
+    $container.empty();
+    this.$container = $container;
+    this.$container.attr('id', 'widget-container');
+    this.$pickerContainer = $('<div id="picker-container"></div>');
+    this.$container.append(this.$pickerContainer);
+    this.currentPriority = 1;
+    this.slotData = [];
+  }
+
+  _createClass(TimeRangeSelector, [{
+    key: "renderPicker",
+    value: function renderPicker(slotList) {
+      this.slotData = _.cloneDeep(slotList);
+      this.$pickerContainer.empty();
+      var $pickerTable = $('<table id="picker-table"></table>');
+      this.$pickerContainer.append($pickerTable); // Paint table
+
+      var $firstRow = $('<tr class="firstRow"></tr>').append('<td></td>');
+      var _iteratorNormalCompletion10 = true;
+      var _didIteratorError10 = false;
+      var _iteratorError10 = undefined;
+
+      try {
+        for (var _iterator10 = slotList[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+          var _slot2 = _step10.value;
+          $firstRow.append($("<td>".concat(_slot2.date, "</td>")).attr('data-date', _slot2.date));
+        }
+      } catch (err) {
+        _didIteratorError10 = true;
+        _iteratorError10 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion10 && _iterator10.return != null) {
+            _iterator10.return();
+          }
+        } finally {
+          if (_didIteratorError10) {
+            throw _iteratorError10;
+          }
+        }
+      }
+
+      $firstRow.find('td').addClass('unselectable');
+      $pickerTable.append($firstRow);
+
+      for (var i = 16; i < 41; i++) {
+        var $row = $('<tr></tr>');
+        $row.append("<td class=\"unselectable\">".concat(i % 2 === 0 ? parseInt(i / 2) : '', "</td>"));
+        var _iteratorNormalCompletion11 = true;
+        var _didIteratorError11 = false;
+        var _iteratorError11 = undefined;
+
+        try {
+          for (var _iterator11 = slotList[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+            var slot = _step11.value;
+            var disabled = i < slot.startTime || i > slot.endTime;
+            $row.append($("<td class=\"".concat(disabled ? 'disabled' : '', "\"></td>")).attr('data-date', slot.date).attr('data-index', i));
+          }
+        } catch (err) {
+          _didIteratorError11 = true;
+          _iteratorError11 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion11 && _iterator11.return != null) {
+              _iterator11.return();
+            }
+          } finally {
+            if (_didIteratorError11) {
+              throw _iteratorError11;
+            }
+          }
+        }
+
+        $pickerTable.append($row);
+      } // Bind events
+
+
+      var isMouseDown = false;
+      var isSelecting = true;
+      var startRowIndex = null;
+      var startCellIndex = null;
+      var self = this;
+
+      function selectTo(cell) {
+        var row = cell.parent();
+        var cellIndex = cell.index();
+        var rowIndex = row.index();
+        var rowStart, rowEnd, cellStart, cellEnd;
+
+        if (rowIndex < startRowIndex) {
+          rowStart = rowIndex;
+          rowEnd = startRowIndex;
+        } else {
+          rowStart = startRowIndex;
+          rowEnd = rowIndex;
+        }
+
+        if (cellIndex < startCellIndex) {
+          cellStart = cellIndex;
+          cellEnd = startCellIndex;
+        } else {
+          cellStart = startCellIndex;
+          cellEnd = cellIndex;
+        }
+
+        for (var _i3 = rowStart; _i3 <= rowEnd; _i3++) {
+          var rowCells = $pickerTable.find("tr").eq(_i3).find("td");
+
+          for (var j = cellStart; j <= cellEnd; j++) {
+            if (isSelecting) rowCells.eq(j).addClass("selected").addClass("priority-".concat(self.currentPriority));else rowCells.eq(j).removeClass("selected").removeClass();
+          }
+        }
+      }
+
+      $pickerTable.find("td").mousedown(function (e) {
+        var cell = $(this);
+        if (cell.hasClass('unselectable') || cell.hasClass('disabled')) return false;
+        isMouseDown = true;
+        isSelecting = !cell.hasClass('selected');
+
+        if (e.shiftKey) {
+          selectTo(cell);
+        } else {
+          if (isSelecting) cell.addClass("selected").addClass("priority-".concat(self.currentPriority));else cell.removeClass('selected').removeClass();
+          startCellIndex = cell.index();
+          startRowIndex = cell.parent().index();
+        }
+
+        return false; // prevent text selection
+      }).mouseover(function () {
+        if (!isMouseDown) return;
+        var cell = $(this);
+        if (cell.hasClass('unselectable') || cell.hasClass('disabled')) return;
+        selectTo($(this));
+      }).bind("selectstart", function () {
+        return false;
+      });
+      $(document).mouseup(function () {
+        isMouseDown = false;
+      });
+    }
+  }, {
+    key: "getPickerData",
+    value: function getPickerData() {
+      var res = [];
+      var _iteratorNormalCompletion12 = true;
+      var _didIteratorError12 = false;
+      var _iteratorError12 = undefined;
+
+      try {
+        for (var _iterator12 = this.slotData[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+          var slot = _step12.value;
+          var colGrid = this.$pickerContainer.find("td[data-date=\"".concat(slot.date, "\"]"));
+          var maxV = -1,
+              minV = 100;
+
+          for (var i = 16; i < 41; i++) {
+            var $ele = $(colGrid[i - 16]);
+
+            if ($ele.hasClass('selected')) {
+              if ($ele.hasClass('priority-1')) {
+                maxV = Math.max(maxV, i - 1);
+                minV = Math.min(minV, i - 1);
+              }
+            }
+          }
+
+          if (maxV === -1) maxV = 40;
+          if (minV === 100) minV = 0;
+          res.push({
+            date: slot.date,
+            maxV: maxV,
+            minV: minV
+          });
+        }
+      } catch (err) {
+        _didIteratorError12 = true;
+        _iteratorError12 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion12 && _iterator12.return != null) {
+            _iterator12.return();
+          }
+        } finally {
+          if (_didIteratorError12) {
+            throw _iteratorError12;
+          }
+        }
+      }
+
+      return res;
+    }
+  }]);
+
+  return TimeRangeSelector;
 }();
