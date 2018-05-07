@@ -42,6 +42,14 @@ $(() => {
                 scoreList: arr.map(e => parseInt(e) / 5.0)
             })
         }
+        if (tmp.length === 0) {
+            for (let item of pickerData) {
+                tmp.push({
+                    date: item.date,
+                    scoreList: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                })
+            }
+        }
         widget.renderPresenter(tmp);
 
         // Render location

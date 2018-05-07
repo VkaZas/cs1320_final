@@ -10,6 +10,12 @@
     display: inline-block; }
     #widget-container #priority-container div {
       margin-top: 40px; }
+    #widget-container #priority-container #btn-p1 {
+      background-color: #b5d4e9; }
+    #widget-container #priority-container #btn-p2 {
+      background-color: #4b97c9; }
+    #widget-container #priority-container #btn-p3 {
+      background-color: #0a4a90; }
   #widget-container #picker-container {
     display: inline-block;
     width: 40%;
@@ -26,11 +32,11 @@
       #widget-container #picker-container table tr td.disabled {
         background-color: lightgrey; }
       #widget-container #picker-container table tr td.priority-1 {
-        background-color: #4CAF50; }
+        background-color: #b5d4e9; }
       #widget-container #picker-container table tr td.priority-2 {
-        background-color: #2196F3; }
+        background-color: #4b97c9; }
       #widget-container #picker-container table tr td.priority-3 {
-        background-color: #ffeb3b; }
+        background-color: #0a4a90; }
   #widget-container #presenter-container {
     display: inline-block;
     width: 40%;

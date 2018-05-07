@@ -37,10 +37,12 @@ $(function () {
 
     try {
       for (var _iterator = presenterData[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-        var item = _step.value;
-        var arr = item.slot_score_list.split(',');
+        var _item = _step.value;
+
+        var arr = _item.slot_score_list.split(',');
+
         tmp.push({
-          date: item.date,
+          date: _item.date,
           scoreList: arr.map(function (e) {
             return parseInt(e) / 5.0;
           })
@@ -61,12 +63,22 @@ $(function () {
       }
     }
 
+    if (tmp.length === 0) {
+      for (var _i = 0; _i < pickerData.length; _i++) {
+        var item = pickerData[_i];
+        tmp.push({
+          date: item.date,
+          scoreList: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        });
+      }
+    }
+
     widget.renderPresenter(tmp); // Render location
 
     var locations = data.pickerData.locations.split(',');
 
-    for (var _i = 0; _i < locations.length; _i++) {
-      $locationForm.append('<p>' + "<input type=\"checkbox\" id=\"location-".concat(_i, "\"/>") + "<label for=\"location-".concat(_i, "\">").concat(locations[_i], "</label>") + '</p>');
+    for (var _i2 = 0; _i2 < locations.length; _i2++) {
+      $locationForm.append('<p>' + "<input type=\"checkbox\" id=\"location-".concat(_i2, "\"/>") + "<label for=\"location-".concat(_i2, "\">").concat(locations[_i2], "</label>") + '</p>');
     }
 
     $checkBoxes = $('input[type="checkbox"]');

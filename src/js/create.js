@@ -11,11 +11,11 @@ $(() => {
     $startDatePicker.datepicker();
     $startDatePicker.datepicker({
         onClose: () => {
-            startDate = $startDatePicker[0].M_Datepicker.date;
+            startDate = _.cloneDeep($startDatePicker[0].M_Datepicker.date);
             $endDatePicker.datepicker({
                 minDate: startDate,
                 onClose: () => {
-                    endDate = $endDatePicker[0].M_Datepicker.date;
+                    endDate = _.cloneDeep($endDatePicker[0].M_Datepicker.date);
                     endDate.setDate($endDatePicker[0].M_Datepicker.date.getDate() + 1);
                     const pickerData = [];
                     for (let date = startDate, i = 0; date.getDate() !== endDate.getDate(); date.setDate(date.getDate() + 1), i++) {
@@ -60,18 +60,19 @@ $(() => {
         const startTimeList = data.map(e => e.minV);
         const endTimeList = data.map(e => e.maxV);
 
-        console.log(startTimeList);
-        console.log(endTimeList);
+        console.log($startDatePicker[0].M_Datepicker.date.Format('yyyy-MM-dd'));
+        console.log($endDatePicker[0].M_Datepicker.date.Format('yyyy-MM-dd'));
 
         $.post('/event/createEvent', {
             "event_name": name,
             "creator_mail": email,
-            "start_date": startDate.Format('yyyy-MM-dd'),
+            "start_date": $startDatePicker[0].M_Datepicker.date.Format('yyyy-MM-dd'),
             "start_time_list": startTimeList.join(),
             "end_date": $endDatePicker[0].M_Datepicker.date.Format('yyyy-MM-dd'),
             "end_time_list": endTimeList.join(),
             "locations": locations.join(),
         }, (data) => {
+            window.location = data.attend;
         });
     });
 });

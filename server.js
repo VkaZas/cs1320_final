@@ -75,20 +75,20 @@ var transporter = nodemailer.createTransport({
 
 //get the create page up for the creator to start making the event
 app.get('/event/create', function(request, response) {
-  var date = new Date();
-  var year = date.getFullYear();
-  var month = date.getMonth();
-  var calArray = calendar().of(year, month).calendar;
-  a = {month: calendar().of(year, month).month}
-  for(var i=0; i< calArray.length; i++){
-    for(var j = 0; j<calArray[0].length; j++){
-      if(calArray[i][j] != 0)
-        a["a"+(i*7+j)] = calArray[i][j];
-      else
-        a["a"+(i*7+j)] = '';
-    }
-  }
-	response.render('create', a);
+  // var date = new Date();
+  // var year = date.getFullYear();
+  // var month = date.getMonth();
+  // var calArray = calendar().of(year, month).calendar;
+  // a = {month: calendar().of(year, month).month}
+  // for(var i=0; i< calArray.length; i++){
+  //   for(var j = 0; j<calArray[0].length; j++){
+  //     if(calArray[i][j] != 0)
+  //       a["a"+(i*7+j)] = calArray[i][j];
+  //     else
+  //       a["a"+(i*7+j)] = '';
+  //   }
+  // }
+	response.render('create');
   
 });
 
@@ -149,15 +149,18 @@ app.post('/event/createEvent', function(request, response) {
         text: 'Here\'s your link! ' + decision_url
       };
       //url we're sending to the creator so they can send it to attendees
-      var attend_url = buildUrl('hhtp://localhost:8081', {
+      var attend_url = buildUrl('http://localhost:8081', {
         path: 'attend/' + id
       });
+      console.log(attend_url);
       //send email to creator with link to 
       transporter.sendMail(mailoptions, function(err, data) {
         if (err) {
-          console.log(err);
-          response.json({decision: decision_url, attned: attend_url});
+          // console.log(err);
+          // response.redirect(attend_url);
+          response.json({decision: decision_url, attend: attend_url});
         } else {
+            // response.redirect(attend_url);
           response.json({attend: attend_url});
         }
       });

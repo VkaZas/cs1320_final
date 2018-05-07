@@ -22,7 +22,7 @@ function () {
     this.$pickerContainer = $('<div id="picker-container"></div>');
     this.$presenterContainer = $('<div id="presenter-container"></div>');
     this.$priorityContainer = $('<div id="priority-container"></div>');
-    this.$priorityContainer.append($('<div> <a class="btn-floating btn-large waves-effect waves-light green" id="btn-p1">Free</a> </div>')).append($('<div> <a class="btn-floating btn-large waves-effect waves-light blue" id="btn-p2">OK</a> </div>')).append($('<div> <a class="btn-floating btn-large waves-effect waves-light yellow" id="btn-p3">Busy</a> </div>'));
+    this.$priorityContainer.append($('<div> <a class="btn-floating btn-large waves-effect waves-light" id="btn-p1">Free</a> </div>')).append($('<div> <a class="btn-floating btn-large waves-effect waves-light" id="btn-p2">OK</a> </div>')).append($('<div> <a class="btn-floating btn-large waves-effect waves-light" id="btn-p3">Busy</a> </div>'));
     this.$priorityContainer.find('#btn-p1').click(function () {
       _this.currentPriority = 1;
     });

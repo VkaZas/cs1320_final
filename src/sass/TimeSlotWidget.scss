@@ -1,6 +1,6 @@
-$p1Color : #4CAF50;
-$p2Color : #2196F3;
-$p3Color : #ffeb3b;
+$p1Color : rgb(181, 212, 233);
+$p2Color : rgb(75, 151, 201);
+$p3Color : rgb(10, 74, 144);
 
 #widget-container {
   margin-top: 20px;
@@ -17,6 +17,9 @@ $p3Color : #ffeb3b;
     div {
       margin-top: 40px;
     }
+    #btn-p1 {background-color: $p1Color}
+    #btn-p2 {background-color: $p2Color}
+    #btn-p3 {background-color: $p3Color}
   }
   #picker-container {
     display: inline-block;
