@@ -1,0 +1,32 @@
+$p1Color : #4CAF50;
+$p2Color : #2196F3;
+$p3Color : #ffeb3b;
+
+.confirm{
+  margin-top: 20px;
+
+}
+#location-chart p{
+  margin: 2px;
+  line-height: 50px;
+ }
+  .location-bar {
+       background-color: #80cbc4;
+       height: 100%;
+       text: #212121;
+       background-clip: content-box;
+     }
+
+#widget-container {
+  #presenter-container {
+    width: 85%!important;
+
+    td:not(.unselectable) {
+      cursor: pointer;
+    }
+    td.selected {
+      border: 2px solid $p1Color;
+      transition: border .5s!important;
+    }
+  }
+}

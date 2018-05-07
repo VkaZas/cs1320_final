@@ -1,0 +1,20 @@
+.confirm {
+  margin-top: 20px; }
+
+#location-chart p {
+  margin: 2px;
+  line-height: 50px; }
+
+.location-bar {
+  background-color: #80cbc4;
+  height: 100%;
+  text: #212121;
+  background-clip: content-box; }
+
+#widget-container #presenter-container {
+  width: 85% !important; }
+  #widget-container #presenter-container td:not(.unselectable) {
+    cursor: pointer; }
+  #widget-container #presenter-container td.selected {
+    border: 2px solid #4CAF50;
+    transition: border 0.5s !important; }

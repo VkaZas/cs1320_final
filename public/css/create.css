@@ -1,0 +1,8 @@
+.container {
+  margin-top: 60px; }
+  .container > .row {
+    text-align: center; }
+  .container #form-card {
+    padding: 20px 80px; }
+    .container #form-card #picker-container {
+      width: 85%; }

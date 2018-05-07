@@ -1,0 +1,51 @@
+extends _base
+
+block links
+    link(rel='stylesheet', href='/css/decide.css')
+    link(rel='stylesheet', href='http://materializecss.com/css/ghpages-materialize.css')
+    link(rel='stylesheet', href='/css/TimeSlotWidget.css')
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js")
+    script(src='/js/decide.js')
+    script(src='/js/TimeSlotWidget.js')
+    meta(name="eventID", content=id)
+
+block body-content
+    //.container#typeform-container
+    //    #embedded-typeform
+    #form-container.container.col.l12
+        ul.collapsible.popout
+            li#time.active
+                #time-header.collapsible-header
+                    i.material-icons access_time
+                    | Choose a time
+                #time-body.collapsible-body
+                    #time-content
+                    #time-confirm.confirm
+                        a.waves-effect.waves-light.btn(onclick="confirmTime()") Confirm
+            li#location
+                #location-header.collapsible-header
+                    i.material-icons place
+                    | Choose a location
+                #location-body.collapsible-body
+                    #location-content.container
+                        form(action="#")#location-chart
+                    #location-confirm.confirm
+                        a.waves-effect.waves-light.btn(onclick="confirmLocation()") Confirm
+            li#email
+                #email-header.collapsible-header
+                    i.material-icons email
+                    | Choose emails
+                #email-body.collapsible-body
+                    #email-content
+                        .row
+                            p.caption Recipients:
+                            i.material-icons.prefix account_circle
+                            #email-recipients.chips.chips-initial.chips-placeholder.input-field.inline.validate(type="email")
+
+                        //.row
+                        //    .input-field
+                        //        textarea#email-text.materialize-textarea(data-length="500")
+                        //        label(for="email-text") Email content
+                    #emial-confirm.confirm
+                        a.waves-effect.waves-light.btn(onclick="confirmEmail()") Submit
+                            i.material-icons.right send

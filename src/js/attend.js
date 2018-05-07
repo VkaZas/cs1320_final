@@ -3,11 +3,13 @@
 let pickerData = [];
 let presenterData = [];
 
-let $btnSubmit;
 
 $(() => {
-    $btnSubmit = $('#btn-submit');
+    const $btnSubmit = $('#btn-submit');
+    const $locationForm = $('#location').find('form');
+    let $checkBoxes;
     const eventID = document.querySelector('meta[name=eventID]').content;
+
     $.post(`/attend/${eventID}`, {id: eventID}, (data) => {
 
         console.log(data);
@@ -37,14 +39,31 @@ $(() => {
             const arr = item.slot_score_list.split(',');
             tmp.push({
                 date: item.date,
-                scoreList: arr.map(e => parseInt(e) / 20.0)
+                scoreList: arr.map(e => parseInt(e) / 5.0)
             })
         }
-        console.log(tmp);
+        if (tmp.length === 0) {
+            for (let item of pickerData) {
+                tmp.push({
+                    date: item.date,
+                    scoreList: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                })
+            }
+        }
         widget.renderPresenter(tmp);
+
+        // Render location
+        const locations = data.pickerData.locations.split(',');
+        for (let i = 0; i < locations.length; i++) {
+            $locationForm.append('<p>' +
+                    `<input type="checkbox" id="location-${i}"/>` +
+                    `<label for="location-${i}">${locations[i]}</label>` +
+                '</p>');
+        }
+        $checkBoxes = $('input[type="checkbox"]');
     });
 
-    // // Sample data
+    // Sample data
     // $.post('/event/createEvent', {
     //     "event_name": "test_event",
     //     "creator_mail": "test@gmail.com",
@@ -94,10 +113,26 @@ $(() => {
     // widget.renderPresenter(presenterData);
     window.widget = widget;
 
-    console.log($btnSubmit);
     $btnSubmit.click(() => {
         console.log('clicked!');
+        const name = $('#name-input').val();
+        if (!name) {
+            alert('Please input your name');
+            return;
+        }
+
+        let locationVoteB = 0;
+        for (let i = 0; i < $checkBoxes.length; i++) {
+            if ($(`#location-${i}`).prop('checked') === true) {
+                locationVoteB |= (1 << i);
+
+            }
+        }
+
         $.post(`/attend/updatetimeslots/${eventID}`, {
+            locationVote: locationVoteB,
+            attendeeName: name,
+            attendeeEmail: $('#email-input').val(),
             pickerData: JSON.stringify(widget.getPickerData()),
             test: 1,
         }, (res) => {
@@ -108,7 +143,7 @@ $(() => {
                 const arr = item.slot_score_list.split(',');
                 tmp.push({
                     date: item.date,
-                    scoreList: arr.map(e => parseInt(e) / 20.0)
+                    scoreList: arr.map(e => parseInt(e) / 5.0)
                 })
             }
             widget.renderPresenter(tmp);
