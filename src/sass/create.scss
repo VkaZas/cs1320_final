@@ -1,6 +1,10 @@
 .container {
   margin-top: 60px;
 
+  &>.row {
+    text-align: center;
+  }
+
   #form-card {
     padding: 20px 80px;
 
